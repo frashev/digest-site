@@ -627,7 +627,7 @@ def main():
         page = (
             '<!DOCTYPE html>\n<html lang="bg">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            '<title>%s — Моите дайджести</title>\n'
+            '<title>' + esc(title) + ' — Моите дайджести</title>\n'
             '<meta name="description" content="Новини, събития и справки — обновява се автоматично.">\n'
             '<meta name="theme-color" content="#FBF9F3">\n'
             '<link rel="icon" href="favicon.ico" sizes="any">\n'

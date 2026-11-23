@@ -702,8 +702,8 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .subnav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
 .subnav a{display:inline-block;padding:8px 14px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--surface);font-size:14px;font-weight:600;color:var(--ink-soft);text-decoration:none}
 .subnav a:hover{border-color:var(--accent);color:var(--accent)}
-.fab-nav{position:fixed;right:18px;bottom:18px;z-index:60;width:54px;height:54px;border-radius:50%;border:0;background:linear-gradient(135deg,#FF6B6B 0%,#FFA94D 25%,#51CF66 50%,#339AF0 75%,#9775FA 100%);color:#fff;font-size:26px;line-height:1;cursor:pointer;animation:fab-pulse 2.4s ease-out infinite}
-@keyframes fab-pulse{0%{box-shadow:0 4px 16px rgba(151,117,250,.45),0 0 0 0 rgba(151,117,250,.45)}70%{box-shadow:0 4px 16px rgba(151,117,250,.45),0 0 0 14px rgba(151,117,250,0)}100%{box-shadow:0 4px 16px rgba(151,117,250,.45),0 0 0 0 rgba(151,117,250,0)}}
+.fab-nav{position:fixed;right:18px;bottom:18px;z-index:60;width:54px;height:54px;border-radius:50%;border:0;background:linear-gradient(135deg,#D95B5B 0%,#D98A3D 25%,#3FA35C 50%,#2F80C9 75%,#7A5FD0 100%);color:#fff;font-size:26px;line-height:1;cursor:pointer;animation:fab-pulse 2.4s ease-out infinite}
+@keyframes fab-pulse{0%{box-shadow:0 4px 16px rgba(122,95,208,.45),0 0 0 0 rgba(122,95,208,.45)}70%{box-shadow:0 4px 16px rgba(122,95,208,.45),0 0 0 14px rgba(122,95,208,0)}100%{box-shadow:0 4px 16px rgba(122,95,208,.45),0 0 0 0 rgba(122,95,208,0)}}
 .fab-menu{position:fixed;right:18px;bottom:84px;z-index:60;width:min(300px,calc(100vw - 36px));max-height:min(60vh,420px);overflow-y:auto;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--shadow-lift);padding:6px;display:none}
 .fab-menu.open{display:block}
 .fab-menu a{display:block;padding:11px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:15px}
@@ -1146,9 +1146,9 @@ def main():
             '<p>Последно обновяване: ' + esc(updated) + ' · Обновява се автоматично на всеки час.</p>'
             '<p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p>'
             '</div></footer>\n'
-            '<script>' + JS + '</script>\n' + extra_js +
             '<button id="fabNav" class="fab-nav" type="button" aria-label="Раздели на страницата" title="Раздели на страницата">↑</button>\n'
             '<nav id="fabMenu" class="fab-menu" aria-label="Раздели на страницата"></nav>\n'
+            '<script>' + JS + '</script>\n' + extra_js +
             '</body>\n</html>\n'
         )
         return page

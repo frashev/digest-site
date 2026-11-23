@@ -195,8 +195,8 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .subnav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
 .subnav a{display:inline-block;padding:8px 14px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--surface);font-size:14px;font-weight:600;color:var(--ink-soft);text-decoration:none}
 .subnav a:hover{border-color:var(--accent);color:var(--accent)}
-.fab-nav{position:fixed;right:18px;bottom:18px;z-index:60;width:54px;height:54px;border-radius:50%;border:0;background:linear-gradient(135deg,#FF6B6B 0%,#FFA94D 25%,#51CF66 50%,#339AF0 75%,#9775FA 100%);color:#fff;font-size:26px;line-height:1;cursor:pointer;animation:fab-pulse 2.4s ease-out infinite}
-@keyframes fab-pulse{0%{box-shadow:0 4px 16px rgba(151,117,250,.45),0 0 0 0 rgba(151,117,250,.45)}70%{box-shadow:0 4px 16px rgba(151,117,250,.45),0 0 0 14px rgba(151,117,250,0)}100%{box-shadow:0 4px 16px rgba(151,117,250,.45),0 0 0 0 rgba(151,117,250,0)}}
+.fab-nav{position:fixed;right:18px;bottom:18px;z-index:60;width:54px;height:54px;border-radius:50%;border:0;background:linear-gradient(135deg,#D95B5B 0%,#D98A3D 25%,#3FA35C 50%,#2F80C9 75%,#7A5FD0 100%);color:#fff;font-size:26px;line-height:1;cursor:pointer;animation:fab-pulse 2.4s ease-out infinite}
+@keyframes fab-pulse{0%{box-shadow:0 4px 16px rgba(122,95,208,.45),0 0 0 0 rgba(122,95,208,.45)}70%{box-shadow:0 4px 16px rgba(122,95,208,.45),0 0 0 14px rgba(122,95,208,0)}100%{box-shadow:0 4px 16px rgba(122,95,208,.45),0 0 0 0 rgba(122,95,208,0)}}
 .fab-menu{position:fixed;right:18px;bottom:84px;z-index:60;width:min(300px,calc(100vw - 36px));max-height:min(60vh,420px);overflow-y:auto;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--shadow-lift);padding:6px;display:none}
 .fab-menu.open{display:block}
 .fab-menu a{display:block;padding:11px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:15px}
@@ -217,6 +217,8 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 <header class="site-header"><div class="container"><div class="header-row"><a class="brand" href="index.html"><img src="favicon.svg" alt="" width="32" height="32"><span class="brand-name">Моите дайджести</span></a><span class="brand-date">понеделник, 23 ноември 2026</span></div><nav class="nav" aria-label="Раздели"><div class="nav-inner"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html" aria-current="page">RADAR</a><a href="cars.html">Коли</a><a href="aiplan.html">AI план</a><a href="search.html">🔍 Търсене</a></div></nav></div></header>
 <main id="main"><div class="container" id="top"><div class="page-hero"><p class="kicker">RADAR</p><h1>RADAR действия</h1><p class="lede">Какво следва от последните AI RADAR издания.</p></div></div><section><div class="container"><div class="frame-wrap"><iframe src="radar-actions.html" data-autosize loading="lazy" title="Съдържание"></iframe></div></div></section></main>
 <footer><div class="container"><div class="foot-nav"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html" aria-current="page">RADAR</a><a href="cars.html">Коли</a><a href="aiplan.html">AI план</a><a href="search.html">🔍 Търсене</a></div><p>Последно обновяване: 23.11.2026 10:21 · Обновява се автоматично на всеки час.</p><p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p></div></footer>
+<button id="fabNav" class="fab-nav" type="button" aria-label="Раздели на страницата" title="Раздели на страницата">↑</button>
+<nav id="fabMenu" class="fab-menu" aria-label="Раздели на страницата"></nav>
 <script>
 // Менюто се скролва до активната страница (центрира я в лентата)
 (function(){
@@ -366,7 +368,5 @@ window.addEventListener('resize', fitIframes);
   });
 })();
 </script>
-<button id="fabNav" class="fab-nav" type="button" aria-label="Раздели на страницата" title="Раздели на страницата">↑</button>
-<nav id="fabMenu" class="fab-menu" aria-label="Раздели на страницата"></nav>
 </body>
 </html>

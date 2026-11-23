@@ -956,9 +956,15 @@ window.addEventListener('resize', fitIframes);
     if (!h.id) h.id = 'sec-' + (i + 1);
     var t = (h.textContent || '').replace(/\\s+/g, ' ').trim();
     if (!t) return;
-    var cls = SEC_COLORS[h.id] || (h.id.indexOf('day-') === 0 ? 'c3' : 'c' + ((i % 5) + 1));
-    var tip = TIPS[h.id] || TIPS_BY_TEXT[t] || (h.id.indexOf('day-') === 0 ? (document.getElementById('podari-list') ? 'Всички посещения на тази дата — натисни, за да отидеш на деня.' : 'Всичко за този ден — натисни, за да отидеш на деня.') : '');
-    html += '<a class="' + cls + '" href="#' + h.id + '"' + (tip ? ' data-tip="' + tip + '"' : '') + '>' + t + '</a>';
+    // БЪГ (23.11): h2 нямат собствен id — id-то е на <section>-а около тях.
+    // Затова цветът и tooltip-ът се търсят по id-то на секцията, не на заглавието.
+    var sec = h.closest ? h.closest('section') : null;
+    var sid = sec ? sec.id : '';
+    var target = sid || h.id;
+    var isDay = sid.indexOf('day-') === 0 || sid.indexOf('pday-') === 0;
+    var cls = SEC_COLORS[sid] || (isDay ? 'c3' : 'c' + ((i % 5) + 1));
+    var tip = TIPS[sid] || TIPS_BY_TEXT[t] || (isDay ? (document.getElementById('podari-list') ? 'Всички посещения на тази дата — натисни, за да отидеш на деня.' : 'Всичко за този ден — натисни, за да отидеш на деня.') : '');
+    html += '<a class="' + cls + '" href="#' + target + '"' + (tip ? ' data-tip="' + tip + '"' : '') + '>' + t + '</a>';
   });
   menu.innerHTML = html;
   btn.addEventListener('click', function(e){

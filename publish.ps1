@@ -22,22 +22,25 @@ if ($LASTEXITCODE -ne 0) {
 $remotes = git remote 2>$null
 if (-not $remotes) { Log "NO-REMOTE: repo not linked to GitHub yet"; exit 0 }
 
-# 4. push иска валиден gh вход на този компютър
+# 4. GitHub Pages — включи веднъж, после само чети. Работи само ако gh е
+# влязъл на този компютър; иначе се пропуска тихо (Pages се включва ръчно
+# от Settings на репото). Никога не проваля скрипта и не спира push-а.
 gh auth status 2>$null | Out-Null
-if ($LASTEXITCODE -ne 0) { Log "PUSH-SKIPPED: gh not logged in (run gh auth login on this PC)"; exit 0 }
+if ($LASTEXITCODE -eq 0) {
+    try {
+        $pages = gh api "repos/frashev/digest-site/pages" --jq '.html_url' 2>$null
+        if (-not $pages) {
+            gh api "repos/frashev/digest-site/pages" -X POST -f "source[branch]=main" -f "source[path]=/" --jq '.html_url' 2>$null | Out-Null
+            if ($LASTEXITCODE -eq 0) { Log "PAGES: enabled" } else { Log "PAGES: enable failed (ignored)" }
+        } else {
+            Log ("PAGES: " + $pages)
+        }
+    } catch { Log "PAGES: ensure failed (ignored)" }
+} else {
+    Log "PAGES: skipped (gh not logged in — enable Pages from repo Settings)"
+}
 
-# 5. GitHub Pages — включи веднъж, после само чети (best effort, никога не проваля скрипта)
-try {
-    $pages = gh api "repos/frashev/digest-site/pages" --jq '.html_url' 2>$null
-    if (-not $pages) {
-        gh api "repos/frashev/digest-site/pages" -X POST -f "source[branch]=main" -f "source[path]=/" --jq '.html_url' 2>$null | Out-Null
-        if ($LASTEXITCODE -eq 0) { Log "PAGES: enabled" } else { Log "PAGES: enable failed (ignored)" }
-    } else {
-        Log ("PAGES: " + $pages)
-    }
-} catch { Log "PAGES: ensure failed (ignored)" }
-
-# 6. push (с fallback за първи път без upstream)
+# 5. push през SSH ключа на този компютър (gh не е нужен)
 git push
 if ($LASTEXITCODE -ne 0) {
     git push -u origin main

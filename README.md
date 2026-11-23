@@ -4,17 +4,14 @@
 табло с коли и AI план за учене. Всичко, което Muse генерира като HTML,
 се качва тук автоматично.
 
-Бъдещ адрес (след включване на GitHub Pages):
-https://frashev.github.io/digest-site/
+Адрес: https://frashev.github.io/digest-site/
 
 Как работи:
 - Muse генерира HTML файловете в своя workspace.
-- `site-sync.py` (на Muse, на всеки 15 мин) копира новите/променените
+- `site-sync.py` (на Muse, на всеки час) копира новите/променените
   файлове в тази папка през SSH и пуска `publish.ps1`.
 - `publish.ps1` (на този компютър) генерира `index.html` през
-  `build-index.py`, commit-ва промените и ги push-ва с `gh` към GitHub.
-- GitHub Pages сервира сайта. Push-ът става от този компютър,
-  затова не иска одобрения в чата на Muse.
-
-Важно: `gh` на този компютър трябва да е влязъл (`gh auth login`),
-иначе push-ът се пропуска и commit-ите чакат локално.
+  `build-index.py`, commit-ва промените и ги push-ва към GitHub.
+- GitHub Pages сервира сайта. Push-ът става от този компютър през
+  SSH ключ (`~/.ssh/id_rsa_github`), затова не иска одобрения
+  в чата на Muse и не иска `gh auth login`.

@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-# build-index.py — генерира МНОГОСТРАНИЧЕН сайт с дайджестите.
+# build-index.py — генерира МНОГОСТРАНИЧЕН сайт с дайджестите (v3: данни, не файлове).
 # Дизайн: mobile-first, топла хартия (#FBF9F3), един тухлен акцент (#9C493D),
 # лепкаво меню с къси етикети (активната страница е маркирана, менюто се
 # скролва до нея). Всяка страница е отделна:
 # index (начало), news (новини), events (събития), vreme, podari,
 # radar, cars, aiplan, scout (ако има), search (глобално търсене).
-# Съдържанието се чете НА СТРАНИЦАТА: малките файлове без скриптове се
-# вграждат директно, изданията (новини/дайджест) и файловете със скриптове
-# се показват във вграден iframe с автоматична височина — височината се мери
-# по долния ръб на последния видим елемент (не по scrollHeight, за да няма
-# празна ивица под съдържанието). Архивът се разгръща на място (data-src се
-# зарежда при първо отваряне). Глобалното търсене чете search.json.
-# Без външни зависимости. Пуска се от publish.ps1 на PC-то.
+# ДАННИТЕ СЕ ЧЕТАТ НА СТРАНИЦАТА, БЕЗ ОТВАРЯНЕ НА HTML ФАЙЛОВЕ:
+# - новини: статиите от най-новото издание се парсват и се показват директно
+#   (по дни и издания, с търсене и филтър по категория); старите издания не се показват.
+# - събития: всички събрани събития от events-registry.json, от днес нататък,
+#   подредени по дни; старите не се показват; дайджест файловете не се ползват.
+# - време: weather.html се вгражда директно (почасова прогноза 24ч x 7 дни).
+# - Подари Време: динамична JS страница — чете podari-trips.json и показва
+#   само предстоящи посещения и обучения; миналите дати изобщо не се виждат.
+# Малките файлове без скриптове се вграждат директно. Глобалното търсене
+# чете search.json. Без външни зависимости. Пуска се от publish.ps1 на PC-то.
 # Изход: index.html, news.html, events.html, vreme.html,
 # podari.html, radar.html, cars.html, aiplan.html, scout.html,
 # search.html, search.json, feed.xml.
@@ -20,6 +23,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 from datetime import datetime
 
 SITE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -124,21 +128,116 @@ def extract_h4_titles(html_text, limit=3):
     return titles
 
 
-def extract_first_headings(html_text, limit=3):
-    titles = []
-    for t in re.findall(r"<h[34][^>]*>(.*?)</h[34]>", html_text, re.S):
-        t = re.sub(r"<[^>]+>", "", t)
-        t = htmlmod.unescape(t).strip()
-        t = re.sub(r"\s+", " ", t)
-        if t:
-            titles.append(t)
-        if len(titles) >= limit:
-            break
-    return titles
-
 
 def count_articles(html_text):
     return len(re.findall(r"<article[^>]*>", html_text))
+
+
+def truncate_text(s, limit=240):
+    s = re.sub(r"\s+", " ", s or "").strip()
+    if len(s) <= limit:
+        return s
+    return s[:limit].rsplit(" ", 1)[0] + "…"
+
+
+NEWS_CAT_LABEL = {"ai": "🤖 AI и технологии", "bg": "🇧🇬 България", "world": "🌍 Свят"}
+
+
+def parse_news_articles(html_text):
+    """Всички статии от едно издание: заглавие, текст, източник, категория."""
+    out = []
+    for m in re.finditer(r'<article class="card"([^>]*)>(.*?)</article>', html_text, re.S):
+        attrs, body = m.group(1), m.group(2)
+
+        def attr(name):
+            mm = re.search(r'%s="([^"]*)"' % name, attrs)
+            return mm.group(1) if mm else ""
+
+        color_m = re.search(r"border-left-color:([^;\"']+)", attrs)
+        color = color_m.group(1).strip() if color_m else "#9C493D"
+        title_m = re.search(r"<h4[^>]*>(.*?)</h4>", body, re.S)
+        title = re.sub(r"<[^>]+>", "", title_m.group(1)) if title_m else ""
+        title = htmlmod.unescape(re.sub(r"\s+", " ", title)).strip()
+        text_m = re.search(r"</h4>\s*<p>(.*?)</p>", body, re.S)
+        text = re.sub(r"<[^>]+>", "", text_m.group(1)) if text_m else ""
+        text = htmlmod.unescape(re.sub(r"\s+", " ", text)).strip()
+        link_m = re.search(r'<a href="([^"]+)"[^>]*>(.*?)</a>', body, re.S)
+        link = link_m.group(1) if link_m else ""
+        link_label = re.sub(r"<[^>]+>", "", link_m.group(2)) if link_m else ""
+        link_label = htmlmod.unescape(re.sub(r"\s+", " ", link_label)).strip()
+        if title:
+            out.append({"day": attr("data-day"), "ed": attr("data-ed"),
+                        "cat": attr("data-cat"), "color": color,
+                        "title": title, "text": text, "link": link,
+                        "link_label": link_label})
+    return out
+
+
+def news_item_html(a):
+    search = "%s %s %s %s" % (a["day"], a["cat"], a["title"], a["text"])
+    link = ('<p class="links"><a href="%s" target="_blank" rel="noopener">%s</a></p>'
+            % (esc(a["link"]), esc(a["link_label"] or "Източник"))) if a["link"] else ""
+    chip = NEWS_CAT_LABEL.get(a["cat"], "")
+    return (
+        '<article class="news-item" data-cat="%s" data-search="%s" style="border-left-color:%s">'
+        '<span class="news-chip" style="border-color:%s;color:%s">%s</span>'
+        '<h4>%s</h4><p>%s</p>%s</article>'
+        % (esc(a["cat"]), esc(search), esc(a["color"]), esc(a["color"]),
+           esc(a["color"]), esc(chip), esc(a["title"]), esc(a["text"]), link)
+    )
+
+
+def load_events_registry():
+    """Всички събрани събития от регистъра (ако файлът е в SITE_DIR)."""
+    path = os.path.join(SITE_DIR, "events-registry.json")
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    evs = data.get("events", data) if isinstance(data, dict) else data
+    return [e for e in evs if isinstance(e, dict)]
+
+
+def event_card_html(e):
+    name = e.get("name") or ""
+    start = e.get("start") or ""
+    end = e.get("end") or ""
+    time_txt = "%s–%s" % (start, end) if end else start
+    venue = e.get("venue") or ""
+    address = e.get("address") or ""
+    place = "%s, %s" % (venue, address) if address and address != venue else venue
+    cat = e.get("category") or ""
+    desc = e.get("description_bg") or ""
+    if desc:
+        if len(desc) > 240:
+            desc_html = ('<p class="ev-desc">%s</p>'
+                         '<details class="ev-desc"><summary>Цялото описание</summary>'
+                         '<p>%s</p></details>'
+                         % (esc(truncate_text(desc, 240)), esc(desc)))
+        else:
+            desc_html = '<p class="ev-desc">%s</p>' % esc(desc)
+    else:
+        desc_html = ""
+    free_badge = ' <span class="ev-free">🆓 Безплатно</span>' if e.get("free") else ""
+    cat_chip = '<span class="ev-cat">%s</span>' % esc(cat) if cat else ""
+    links = []
+    if e.get("link"):
+        links.append('<a href="%s" target="_blank" rel="noopener">Към събитието →</a>'
+                     % esc(e["link"]))
+    if e.get("maps_query"):
+        links.append('<a href="https://www.google.com/maps/search/?api=1&query=%s" '
+                     'target="_blank" rel="noopener">Карта</a>'
+                     % urllib.parse.quote(e["maps_query"]))
+    search = "%s %s %s %s %s" % (e.get("date", ""), name, place, cat, desc)
+    return (
+        '<article class="ev-card" id="ev-%s" data-search="%s">'
+        '<div><span class="ev-time">%s</span>%s %s</div>'
+        '<h3>%s</h3><p class="ev-venue">%s</p>%s'
+        '<p class="ev-links">%s</p></article>'
+        % (esc(str(e.get("number", ""))), esc(search), esc(time_txt),
+           free_badge, cat_chip, esc(name), esc(place), desc_html,
+           " ".join(links))
+    )
 
 
 def plain_text(html_text, limit=600):
@@ -296,6 +395,47 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
 }
+/* v3: данни директно на страницата — време, новини, събития, Подари Време */
+.wx-day{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);margin:0 0 14px;padding:16px}
+.wx-head{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.wx-date{font-size:18px;font-weight:700;font-family:var(--font-serif)}
+.wx-dow{color:var(--muted);font-size:14px}
+.wx-sum{font-size:13px;color:var(--muted)}
+.wx-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.wx-hour{flex:none;width:58px;text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 2px 7px;font-size:12px;line-height:1.5}
+.wx-hour span{display:block}
+.wx-h{font-weight:700;color:var(--muted)}
+.wx-e{font-size:18px}
+.wx-t{font-weight:700;font-size:14px}
+.wx-p,.wx-w{color:var(--muted);font-size:11px}
+.wx-hour.wx-now{border-color:var(--accent);background:var(--accent-soft)}
+.wx-hour.wx-now .wx-h{color:var(--accent)}
+.inline-content .sub{color:var(--muted);font-size:14px}
+.news-day{margin:0 0 8px}
+.news-day h2{font-size:clamp(22px,3vw,26px)}
+.news-day .count{color:var(--muted);font-size:15px;font-weight:400;font-family:var(--font-sans)}
+.news-ed{font-size:17px;margin:18px 0 10px;color:var(--ink-soft)}
+.news-item{background:var(--surface);border:1px solid var(--border);border-left:5px solid var(--accent);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:16px 18px;margin:0 0 12px}
+.news-item h4{margin:6px 0;font-size:18px;line-height:1.35;font-family:var(--font-serif)}
+.news-item p{margin:6px 0;font-size:15px}
+.news-item .links{margin:8px 0 0;font-size:14px}
+.news-chip{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--r-pill);border:1.5px solid}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.fchip{padding:8px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;font-family:var(--font-sans);color:var(--ink)}
+.fchip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.ev-day{margin:0 0 6px}
+.ev-day h2{font-size:clamp(22px,3vw,26px)}
+.ev-day .count{color:var(--muted);font-size:15px;font-weight:400;font-family:var(--font-sans)}
+.ev-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:16px 18px;margin:0 0 12px}
+.ev-card h3{margin:4px 0 2px;font-size:18px;line-height:1.3}
+.ev-time{font-weight:700;color:var(--accent);font-size:14px}
+.ev-venue{color:var(--muted);font-size:14px;margin:2px 0 6px}
+.ev-desc{font-size:15px;margin:6px 0}
+.ev-desc summary{cursor:pointer;color:var(--accent);font-size:14px;padding:4px 0}
+.ev-links{margin:8px 0 0;font-size:14px;display:flex;gap:16px;flex-wrap:wrap}
+.ev-free{display:inline-block;background:#E8F5E9;color:#2E7D32;font-size:12px;font-weight:700;padding:3px 10px;border-radius:var(--r-pill)}
+.ev-cat{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink-soft)}
+.podari-note{font-size:13px;color:var(--muted)}
 """
 
 JS = """
@@ -385,6 +525,38 @@ function fitIframes(){
 }
 window.addEventListener('load', function(){ fitIframes(); setInterval(fitIframes, 900); });
 window.addEventListener('resize', fitIframes);
+// Времето: маркира текущия час за днешния ден
+(function(){
+  var now = new Date();
+  var iso = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  var cell = document.querySelector('.wx-hour[data-date="' + iso + '"][data-hour="' + now.getHours() + '"]');
+  if (cell) { cell.classList.add('wx-now'); cell.scrollIntoView({block: 'nearest', inline: 'center'}); }
+})();
+// Новини: филтър по категория (чипове)
+(function(){
+  var chips = document.querySelectorAll('#catChips .fchip');
+  if (!chips.length) return;
+  chips.forEach(function(b){
+    b.addEventListener('click', function(){
+      chips.forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var cat = b.dataset.cat;
+      document.querySelectorAll('.news-item').forEach(function(c){
+        c.hidden = !(cat === 'all' || c.dataset.cat === cat);
+      });
+      document.querySelectorAll('.news-ed-group').forEach(function(g){
+        var any = false;
+        g.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
+        g.hidden = !any;
+      });
+      document.querySelectorAll('.news-day').forEach(function(s){
+        var any = false;
+        s.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
+        s.hidden = !any;
+      });
+    });
+  });
+})();
 """
 
 SEARCH_JS = """
@@ -427,38 +599,105 @@ SEARCH_JS = """
 })();
 """
 
+PODARI_JS = """
+(function(){
+  var list = document.getElementById('podari-list');
+  var countEl = document.getElementById('podari-count');
+  var q = document.getElementById('podari-q');
+  var cat = 'all';
+  var data = null;
+  var TRIPS_URL = 'https://www.podarivreme.org/trips';
+  var BRIEF_URL = 'https://www.podarivreme.org/help?tab=briefings&is_briefing=1';
+  var WD = ['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
+  var MN = ['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
+  function fmtDate(iso){
+    var p = iso.split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return WD[d.getDay()] + ', ' + d.getDate() + ' ' + MN[d.getMonth()] + ' ' + d.getFullYear() + ' г.';
+  }
+  function dayBadge(iso){
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var p = iso.split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var diff = Math.round((d - today) / 86400000);
+    if (diff === 0) return '<span class="ev-free" style="background:#FFEBEE;color:#B71C1C">ДНЕС</span>';
+    if (diff === 1) return '<span class="ev-free" style="background:#FFF3E0;color:#E65100">УТРЕ</span>';
+    return '<span class="ev-cat">след ' + diff + ' дни</span>';
+  }
+  function placesBadge(n){
+    if (n === 0) return '<span class="ev-free" style="background:#FFEBEE;color:#B71C1C">Няма места</span>';
+    if (n <= 3) return '<span class="ev-free" style="background:#FFF3E0;color:#E65100">Оставащи места: ' + n + ' — малко</span>';
+    return '<span class="ev-free">Оставащи места: ' + n + '</span>';
+  }
+  function render(){
+    if (!data) return;
+    var needle = (q.value || '').trim().toLowerCase();
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var items = [];
+    (data.trips_sofia || []).forEach(function(t){
+      items.push({kind: 'sofia', cat: 'От София', date: t.date, place: t.place,
+        meta: 'Тръгване: ' + t.dep + ' · Пред дома: ' + t.home + ' · ' + t.point,
+        places: t.places, url: TRIPS_URL});
+    });
+    (data.trips_local || []).forEach(function(t){
+      items.push({kind: 'local', cat: 'Местни групи', date: t.date, place: t.place,
+        meta: 'Среща пред дома: ' + t.home + ' (местна група — без тръгване от София)',
+        places: t.places, url: TRIPS_URL});
+    });
+    (data.trainings || []).forEach(function(t){
+      items.push({kind: 'training', cat: 'Обучения', date: t.date,
+        place: 'Обучение за нови доброволци',
+        meta: 'Онлайн, около 1 час · ' + (t.time || '18:00'), places: null, url: BRIEF_URL});
+    });
+    items = items.filter(function(it){
+      var p = it.date.split('-');
+      var d = new Date(+p[0], +p[1] - 1, +p[2]);
+      return d >= today;
+    });
+    items.sort(function(a, b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    var byDay = {};
+    items.forEach(function(it){ (byDay[it.date] = byDay[it.date] || []).push(it); });
+    var html = '';
+    var total = 0;
+    Object.keys(byDay).sort().forEach(function(iso){
+      var dayItems = byDay[iso].filter(function(it){
+        return (cat === 'all' || it.kind === cat)
+          && (!needle || (it.place + ' ' + it.meta + ' ' + fmtDate(iso)).toLowerCase().indexOf(needle) !== -1);
+      });
+      if (!dayItems.length) return;
+      total += dayItems.length;
+      html += '<section class="ev-day"><h2>' + fmtDate(iso) + ' ' + dayBadge(iso) + '</h2>';
+      dayItems.forEach(function(it){
+        html += '<article class="ev-card"><div><span class="ev-cat">' + it.cat + '</span></div>'
+          + '<h3>' + it.place + '</h3><p class="ev-venue">' + it.meta + '</p>'
+          + '<p>' + (it.places === null ? '<span class="ev-free">Онлайн</span>' : placesBadge(it.places)) + '</p>'
+          + '<p class="ev-links"><a href="' + it.url + '" target="_blank" rel="noopener">Запиши се →</a></p></article>';
+      });
+      html += '</section>';
+    });
+    list.innerHTML = html || '<p class="no-results">Няма предстоящи посещения за този филтър.</p>';
+    if (countEl) countEl.textContent = total ? ('Предстоящи: ' + total) : '';
+  }
+  fetch('podari-trips.json').then(function(r){ return r.json(); }).then(function(j){
+    data = j; render();
+  }).catch(function(){
+    list.innerHTML = '<p class="no-results">Данните не се заредиха. Актуалните посещения са на '
+      + '<a href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">podarivreme.org/trips</a>.</p>';
+  });
+  q.addEventListener('input', render);
+  document.querySelectorAll('#podariChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#podariChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      cat = b.dataset.cat;
+      render();
+    });
+  });
+})();
+"""
 
-def news_slug(item):
-    return item["name"][:-5]
 
 
-def digest_slug(item):
-    return item["name"][:-5]
-
-
-def news_card(item, html_text, open_by_default=False):
-    count = count_articles(html_text)
-    preview = extract_h4_titles(html_text, 3)
-    label = PART_LABEL[item["part"]]
-    emoji = PART_EMOJI[item["part"]]
-    date_str = fmt_date(item["date"])
-    weekday = weekday_bg(item["date"])
-    date_html = esc(item["label"]) if item.get("label") else "%s, %s" % (date_str, weekday)
-    search = "%s %s %s %s %s" % (date_str, weekday, label, item["part"],
-                                 " ".join(preview))
-    open_attr = " open" if open_by_default else ""
-    return (
-        '<details class="edition" id="ed-%s" data-kind="%s" data-search="%s"%s>'
-        '<summary><span class="ed-part">%s %s</span>'
-        '<span class="ed-date">%s</span>'
-        '<span class="ed-meta">%d новини</span><span class="chev">›</span></summary>'
-        '<div class="ed-body"><iframe data-src="%s" data-autosize loading="lazy" '
-        'title="Новини %s — %s"></iframe></div>'
-        '</details>'
-        % (esc(news_slug(item)), item["part"], esc(search), open_attr,
-           emoji, label, date_html, count, esc(item["name"]),
-           date_str, label)
-    )
 
 
 def news_preview_card(item, html_text):
@@ -472,63 +711,14 @@ def news_preview_card(item, html_text):
     return (
         '<article class="card" data-kind="%s" data-search="%s">'
         '<h3>%s %s · %s</h3><p class="meta">%s · %d новини</p><ul>%s</ul>'
-        '<a class="btn-primary" href="news.html#ed-%s">Чети изданието ↓</a>'
+        '<a class="btn-primary" href="news.html#day-%s">Чети новините ↓</a>'
         '</article>'
         % (item["part"], esc(search), emoji, label, date_str, weekday_bg(item["date"]),
-           count, bullets, esc(news_slug(item)))
+           count, bullets, item["date"].strftime("%d-%m"))
     )
 
 
-def digest_meta(html_text):
-    count = count_articles(html_text)
-    meta = "%d събития" % count
-    m = re.search(r"(\d+) събития.*🆓 (\d+) безплатни.*🆕 (\d+) нови", html_text, re.S)
-    if m:
-        meta = "%s събития · 🆓 %s безплатни · 🆕 %s нови" % (m.group(1), m.group(2), m.group(3))
-    return meta
 
-
-def digest_row(item, html_text, lazy=True):
-    preview = extract_first_headings(html_text, 3)
-    if item["kind"] == "daily":
-        title = "%s, %s" % (fmt_date(item["date"]), weekday_bg(item["date"]))
-        search_extra = " ".join(preview)
-    elif item["kind"] == "weekly":
-        title = "%s · %s" % (fmt_date(item["date"]), item["label"])
-        search_extra = "седмичен списък " + " ".join(preview)
-    else:
-        title = item["label"]
-        search_extra = "вечерни " + " ".join(preview)
-    meta = digest_meta(html_text)
-    search = "%s %s" % (title, search_extra)
-    if lazy:
-        frame = ('<iframe data-src="%s" data-autosize loading="lazy" '
-                 'title="Дайджест %s"></iframe>' % (esc(item["name"]), esc(title)))
-    else:
-        frame = ('<iframe src="%s" data-autosize loading="lazy" '
-                 'title="Дайджест %s"></iframe>' % (esc(item["name"]), esc(title)))
-    return (
-        '<details class="edition" id="dg-%s" data-kind="events" data-search="%s">'
-        '<summary><span class="ed-part">🗓️ %s</span>'
-        '<span class="ed-meta">%s</span><span class="chev">›</span></summary>'
-        '<div class="ed-body">%s</div></details>'
-        % (esc(digest_slug(item)), esc(search), esc(title), esc(meta), frame)
-    )
-
-
-def other_event_row(item, html_text):
-    count = count_articles(html_text)
-    title = item["title"]
-    date_str = fmt_date(item["date"]) if item["date"] else ""
-    search = "%s %s" % (title, date_str)
-    return (
-        '<details class="edition" data-kind="events" data-search="%s">'
-        '<summary><span class="ed-part">🗓️ %s</span>'
-        '<span class="ed-meta">%s · %d събития</span><span class="chev">›</span></summary>'
-        '<div class="ed-body"><iframe data-src="%s" data-autosize loading="lazy" '
-        'title="%s"></iframe></div></details>'
-        % (esc(search), esc(title), esc(date_str), count, esc(item["name"]), esc(title))
-    )
 
 
 def single_body(name):
@@ -545,15 +735,25 @@ def single_body(name):
 def build_feed(news_items):
     from email.utils import formatdate
     items = []
-    for item in sorted(news_items, key=lambda x: (x["date"], PART_ORDER[x["part"]]),
+    if not news_items:
+        return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                '<rss version="2.0"><channel>'
+                '<title>Моите дайджести — Новини</title>'
+                '<link>%s</link>'
+                '<description>Новини сутрин, следобед и вечер — автоматичен обзор</description>'
+                '<language>bg</language></channel></rss>' % BASE_URL)
+    max_date = max(i["date"] for i in news_items)
+    recent = [i for i in news_items if (max_date - i["date"]).days <= 2]
+    for item in sorted(recent, key=lambda x: (x["date"], PART_ORDER[x["part"]]),
                        reverse=True)[:20]:
         count = count_articles(read_file(item["name"]))
         title = "Новини %s — %s" % (fmt_date(item["date"]), PART_LABEL[item["part"]])
         pub = formatdate(file_mtime(item["name"]), usegmt=True)
+        ed_id = "%s-%s" % (item["date"].strftime("%d-%m"), item["part"])
         items.append(
-            "<item><title>%s</title><link>%s%s</link>"
+            "<item><title>%s</title><link>%snews.html#ed-%s</link>"
             "<pubDate>%s</pubDate><description>%d новини</description></item>"
-            % (esc(title), BASE_URL, esc(item["name"]), pub, count)
+            % (esc(title), BASE_URL, ed_id, pub, count)
         )
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -581,8 +781,6 @@ def main():
     single_defs = [
         ("vreme", "Времето", "Времето в София", "Прогноза за следващите дни.",
          "weather.html", "🌤️"),
-        ("podari", "Подари Време", "Подари Време", "Доброволчество с деца — посещения, обучения и информация.",
-         "podari-vreme.html", "❤️"),
         ("radar", "RADAR", "RADAR действия", "Какво следва от последните AI RADAR издания.",
          "radar-actions.html", "📡"),
         ("cars", "Коли", "Коли", "Обяви за коли, които следя.",
@@ -606,6 +804,7 @@ def main():
              ("events", "Събития", "events.html")]
     for sec_id, nav_label, _t, _i, _f, _e in single_defs:
         pages.append((sec_id, nav_label, sec_id + ".html"))
+    pages.insert(4, ("podari", "Подари Време", "podari.html"))
     pages.append(("search", "🔍 Търсене", "search.html"))
 
     updated_ts = 0
@@ -615,6 +814,24 @@ def main():
     now = datetime.now()
     today_str = "%s, %d %s %d" % (WEEKDAYS_BG[now.weekday()], now.day,
                                   MONTHS_BG[now.month - 1], now.year)
+
+    # v3: събития от регистъра (от днес нататък) + статии от най-новото издание
+    registry = load_events_registry()
+    today_iso = now.strftime("%Y-%m-%d")
+    upcoming = []
+    for e in registry:
+        if e.get("status", "active") != "active":
+            continue
+        if e.get("date", "") < today_iso:
+            continue
+        upcoming.append(e)
+    upcoming.sort(key=lambda e: (e.get("date", ""), e.get("start") or "99:99",
+                                 e.get("name", "")))
+    free_count = sum(1 for e in upcoming if e.get("free"))
+    articles = []
+    if news:
+        articles = parse_news_articles(texts[news[-1]["name"]])
+    podari_json_ok = os.path.exists(os.path.join(SITE_DIR, "podari-trips.json"))
 
     def nav_html(active):
         out = []
@@ -671,12 +888,11 @@ def main():
             '<div class="container" id="top"><div class="hero"><p class="kicker">Най-новото</p>'
             '<h1>Новини <span class="hl">%s, %s</span> — <em>%s</em></h1>'
             '<p class="lede">%d новини · %s</p><ul>%s</ul>'
-            '<a class="btn-primary" href="news.html#ed-%s">Чети изданието ↓</a></div></div>'
+            '<a class="btn-primary" href="news.html">Чети новините ↓</a></div></div>'
             % (fmt_date(latest["date"]), weekday_bg(latest["date"]),
                PART_LABEL[latest["part"]],
                count_articles(latest_text), PART_EMOJI[latest["part"]],
-               "".join("<li>%s</li>" % esc(t) for t in extract_h4_titles(latest_text, 3)),
-               esc(news_slug(latest)))
+               "".join("<li>%s</li>" % esc(t) for t in extract_h4_titles(latest_text, 3)))
         )
         latest_date = latest["date"]
         today_items = [i for i in news if i["date"] == latest_date]
@@ -685,30 +901,31 @@ def main():
         hero_html = '<div class="container" id="top"></div>'
         today_cards = ""
 
-    # последен дайджест — карта за началната
-    digest_card = ""
-    if digests:
-        daily = [d for d in digests if d["kind"] == "daily"]
-        latest_d = daily[0] if daily else digests[0]
-        digest_card = (
+    # събития от днес нататък — карта за началната
+    events_card = ""
+    if upcoming:
+        last_iso = upcoming[-1]["date"]
+        events_card = (
             '<article class="card"><span class="icon">🗓️</span>'
-            '<h3>Събития — %s</h3><p class="meta">%s</p>'
-            '<a class="btn-primary" href="events.html#dg-%s">Виж дайджеста ↓</a></article>'
-            % (fmt_date(latest_d["date"]), esc(digest_meta(texts[latest_d["name"]])),
-               esc(digest_slug(latest_d)))
+            '<h3>Събития — от днес нататък</h3>'
+            '<p class="meta">%d събития · 🆓 %d безплатни · до %s</p>'
+            '<a class="btn-primary" href="events.html">Виж събитията ↓</a></article>'
+            % (len(upcoming), free_count,
+               fmt_date(datetime.strptime(last_iso, "%Y-%m-%d")))
         )
 
     # решетка с разделите
     grid_cards = []
     grid_cards.append(
         '<article class="card"><span class="icon">📰</span><h3>Новини</h3>'
-        '<p class="meta">%d издания · сутрин, следобед и вечер</p>'
-        '<a class="btn-ghost" href="news.html">Отвори →</a></article>' % len(news)
+        '<p class="meta">%d новини от последните 3 дни</p>'
+        '<a class="btn-ghost" href="news.html">Отвори →</a></article>' % len(articles)
     )
     grid_cards.append(
         '<article class="card"><span class="icon">🗓️</span><h3>Събития</h3>'
-        '<p class="meta">%d дайджеста · дневен, седмичен и вечерни</p>'
-        '<a class="btn-ghost" href="events.html">Отвори →</a></article>' % len(digests)
+        '<p class="meta">%d събития от днес нататък · 🆓 %d безплатни</p>'
+        '<a class="btn-ghost" href="events.html">Отвори →</a></article>'
+        % (len(upcoming), free_count)
     )
     for sec_id, nav_label, title, intro, fname, emoji in single_defs:
         if fname not in singles:
@@ -720,6 +937,12 @@ def main():
             '<a class="btn-ghost" href="%s.html">Отвори →</a></article>'
             % (emoji, esc(title), esc(meta), sec_id)
         )
+    grid_cards.insert(
+        3,
+        '<article class="card"><span class="icon">❤️</span><h3>Подари Време</h3>'
+        '<p class="meta">Доброволчество с деца — посещения, обучения и информация.</p>'
+        '<a class="btn-ghost" href="podari.html">Отвори →</a></article>'
+    )
 
     home_body = (
         hero_html
@@ -728,7 +951,7 @@ def main():
           '<a href="news.html">Всички новини →</a></div>'
           '<div class="grid">%s%s</div>'
           '</div></section>'
-        % (today_cards, digest_card)
+        % (today_cards, events_card)
         + '<section aria-labelledby="sections-h"><div class="container">'
           '<h2 id="sections-h">Раздели</h2>'
           '<p class="section-intro">Всичко на едно място — избери раздел и чети на място.</p>'
@@ -738,76 +961,91 @@ def main():
     sizes["index.html"] = write_page(
         "index.html", shell("index", "Новини, събития и справки", home_body))
 
-    # ================= НОВИНИ =================
-    if news:
-        latest = news[-1]
-        latest_date = latest["date"]
-        today_items = [i for i in news if i["date"] == latest_date]
-        today_details = "".join(
-            news_card(i, texts[i["name"]], open_by_default=(i is latest))
-            for i in today_items
-        )
-        older = [i for i in news if i["date"] != latest_date]
-        months = {}
-        for item in older:
-            months.setdefault((item["date"].year, item["date"].month), []).append(item)
-        archive_html = ""
-        for (y, mo) in sorted(months, reverse=True):
-            items = sorted(months[(y, mo)], key=lambda x: (x["date"], PART_ORDER[x["part"]]),
-                           reverse=True)
-            rows = "".join(news_card(i, texts[i["name"]]) for i in items)
-            archive_html += (
-                '<details class="archive-month"><summary>%s %d · %d издания</summary>%s</details>'
-                % (MONTHS_BG[mo - 1], y, len(items), rows)
+    # ================= НОВИНИ (v3: статиите директно, без издания) =================
+    if articles:
+        latest_ed = news[-1]
+        ref_date = latest_ed["date"]
+
+        def day_date(day_str, ref):
+            dd, mm = int(day_str[:2]), int(day_str[3:5])
+            dt = datetime(ref.year, mm, dd)
+            if dt > ref:
+                dt = datetime(ref.year - 1, mm, dd)
+            return dt
+
+        days = {}
+        for a in articles:
+            days.setdefault(a["day"], []).append(a)
+        day_sections = []
+        for day in sorted(days, reverse=True):
+            groups = {}
+            for a in days[day]:
+                groups.setdefault(a["ed"], []).append(a)
+            group_html = []
+            for ed in sorted(groups, key=lambda e: PART_ORDER.get(e, 9)):
+                items_html = "".join(news_item_html(a) for a in groups[ed])
+                group_html.append(
+                    '<div class="news-ed-group" id="ed-%s-%s">'
+                    '<h3 class="news-ed">%s %s</h3>%s</div>'
+                    % (day.replace(".", "-"), ed, PART_EMOJI.get(ed, "📰"),
+                       PART_LABEL.get(ed, ed), items_html)
+                )
+            dt = day_date(day, ref_date)
+            day_sections.append(
+                '<section class="news-day" id="day-%s">'
+                '<h2>%s, %s <span class="count">· %d новини</span></h2>%s</section>'
+                % (day.replace(".", "-"), weekday_bg(dt).capitalize(),
+                   dt.strftime("%d.%m"), len(days[day]), "".join(group_html))
             )
         news_body = (
             '<div class="container" id="top"><div class="page-hero">'
             '<p class="kicker">Новини</p><h1>Новини — сутрин, следобед и вечер</h1>'
-            '<p class="lede">%d издания · чети на място, без да отваряш отделни файлове. '
-            'Всяко издание има търсене и филтри вътре.</p></div>'
+            '<p class="lede">%d новини от последните 3 дни · чети направо тук, '
+            'без да отваряш отделни файлове.</p></div>'
             '<div class="searchbar" role="search">'
             '<input id="q" type="search" placeholder="Търси в новините…" aria-label="Търси в новините">'
+            '<div class="chips" id="catChips">'
+            '<button class="fchip on" data-cat="all">Всички</button>'
+            '<button class="fchip" data-cat="ai">🤖 AI</button>'
+            '<button class="fchip" data-cat="bg">🇧🇬 България</button>'
+            '<button class="fchip" data-cat="world">🌍 Свят</button>'
+            '</div>'
             '<p class="count-line" id="count" aria-live="polite"></p>'
             '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
             '</div></div>'
-            '<section aria-labelledby="today-h"><div class="container">'
-            '<h2 id="today-h">%s, %s</h2>%s'
-            '<h3 style="margin:28px 0 12px;font-family:var(--font-serif);font-size:20px">Архив</h3>%s'
-            '</div></section>'
-            % (len(news), fmt_date(latest_date), weekday_bg(latest_date),
-               today_details, archive_html)
+            '%s'
+            % (len(articles), "".join(day_sections))
         )
         sizes["news.html"] = write_page(
             "news.html", shell("news", "Новини", news_body))
 
-    # ================= СЪБИТИЯ =================
-    if digests:
-        daily = [d for d in digests if d["kind"] == "daily"]
-        latest_d = daily[0] if daily else digests[0]
-        rest = [d for d in digests if d is not latest_d]
-        archive_html = "".join(digest_row(d, texts[d["name"]]) for d in rest)
-        other_html = ""
-        if other_events:
-            other_html = (
-                '<h3 style="margin:28px 0 12px;font-family:var(--font-serif);font-size:20px">Още</h3>'
-                + "".join(other_event_row(o, read_file(o["name"])) for o in other_events)
+    # ================= СЪБИТИЯ (v3: от регистъра, от днес нататък) =================
+    if upcoming:
+        by_day = {}
+        for e in upcoming:
+            by_day.setdefault(e["date"], []).append(e)
+        ev_sections = []
+        for iso in sorted(by_day):
+            dt = datetime.strptime(iso, "%Y-%m-%d")
+            cards = "".join(event_card_html(e) for e in by_day[iso])
+            ev_sections.append(
+                '<section class="ev-day" id="day-%s">'
+                '<h2>%s, %s <span class="count">· %d събития</span></h2>%s</section>'
+                % (iso, weekday_bg(dt).capitalize(), dt.strftime("%d.%m"),
+                   len(by_day[iso]), cards)
             )
         events_body = (
             '<div class="container" id="top"><div class="page-hero">'
-            '<p class="kicker">Събития</p><h1>Дневен дайджест със събития</h1>'
-            '<p class="lede">%s · %s. Филтрите са вътре в дайджеста: търсене, дни и категории.</p></div>'
+            '<p class="kicker">Събития</p><h1>Събития — от днес нататък</h1>'
+            '<p class="lede">%d събития · 🆓 %d безплатни · всички събрани събития, '
+            'подредени по дни. Старите не се показват.</p></div>'
             '<div class="searchbar" role="search">'
-            '<input id="q" type="search" placeholder="Търси в дайджестите…" aria-label="Търси в дайджестите">'
+            '<input id="q" type="search" placeholder="Търси в събитията…" aria-label="Търси в събитията">'
             '<p class="count-line" id="count" aria-live="polite"></p>'
             '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
             '</div></div>'
-            '<section aria-labelledby="latest-h"><div class="container">'
-            '<h2 id="latest-h">Най-новият дайджест</h2>%s'
-            '<h3 style="margin:28px 0 12px;font-family:var(--font-serif);font-size:20px">По-стари дайджести</h3>%s%s'
-            '</div></section>'
-            % (fmt_date(latest_d["date"]), esc(digest_meta(texts[latest_d["name"]])),
-               digest_row(latest_d, texts[latest_d["name"]], lazy=False),
-               archive_html, other_html)
+            '%s'
+            % (len(upcoming), free_count, "".join(ev_sections))
         )
         sizes["events.html"] = write_page(
             "events.html", shell("events", "Събития", events_body))
@@ -826,26 +1064,74 @@ def main():
         sizes[sec_id + ".html"] = write_page(
             sec_id + ".html", shell(sec_id, title, body))
 
+    # ================= ПОДАРИ ВРЕМЕ (v3: динамична JS страница) =================
+    podari_body = (
+        '<div class="container" id="top"><div class="page-hero">'
+        '<p class="kicker">Доброволчество</p><h1>Подари Време — предстоящи посещения</h1>'
+        '<p class="lede">Данните се обновяват от сайта на фондацията. Показват се само '
+        'предстоящи дати — миналите изобщо не се виждат.</p></div>'
+        '<div class="searchbar" role="search">'
+        '<input id="podari-q" type="search" placeholder="Търси място…" aria-label="Търси място">'
+        '<div class="chips" id="podariChips">'
+        '<button class="fchip on" data-cat="all">Всички</button>'
+        '<button class="fchip" data-cat="sofia">От София</button>'
+        '<button class="fchip" data-cat="local">Местни групи</button>'
+        '<button class="fchip" data-cat="training">Обучения</button>'
+        '</div>'
+        '<p class="count-line" id="podari-count" aria-live="polite"></p>'
+        '</div></div>'
+        '<section><div class="container" id="podari-list">'
+        '<p class="no-results">Зареждам посещенията…</p>'
+        '</div></section>'
+        '<section><div class="container">'
+        '<article class="card"><h3>Как се записваш за посещение</h3>'
+        '<p class="meta">1) Влез в профила си на podarivreme.org. 2) Отвори „Посещения“ и избери '
+        'локация и дата. 3) Запиши се — местата са ограничени и се виждат в реално време. '
+        '4) За тръгване от София: паркингът пред БНБ, в часа за тръгване от графика; '
+        'местните групи се срещат направо пред дома. 5) Ако си нов и още не си минал '
+        'обучение — първо обучение (всеки четвъртък, 18:00, онлайн).</p>'
+        '<h3>Мисията</h3>'
+        '<p class="meta">„Всяко дете да има до себе си значим възрастен“ — ментор, приятел и пример, '
+        'който вярва в него и го подкрепя дългосрочно.</p>'
+        '<h3>Контакти</h3>'
+        '<p class="meta">бул. „Цариградско шосе“ 40, Европарк, София · hello@podarivreme.org · '
+        'Анастасия Цонева, +359 88 339 7755 · <a href="https://www.podarivreme.org" '
+        'target="_blank" rel="noopener">podarivreme.org</a></p>'
+        '<p class="podari-note">Данните за посещенията се обновяват всеки петък от сайта на фондацията '
+        'и писмата ѝ. Директна жива проверка от браузъра не е възможна — сайтът на '
+        'фондацията не позволява заявки от други страници (CORS).</p>'
+        '</article></div></section>'
+    )
+    sizes["podari.html"] = write_page(
+        "podari.html", shell("podari", "Подари Време", podari_body,
+                             extra_js='<script>' + PODARI_JS + '</script>\n'))
+
     # ================= ТЪРСЕНЕ =================
     search_entries = []
-    for item in news:
+    for a in articles:
         search_entries.append({
-            "t": "Новини %s — %s" % (fmt_date(item["date"]), PART_LABEL[item["part"]]),
-            "d": "%s, %s" % (fmt_date(item["date"]), weekday_bg(item["date"])),
+            "t": a["title"],
+            "d": "%s · %s" % (a["day"], PART_LABEL.get(a["ed"], a["ed"])),
             "k": "Новини",
-            "u": "news.html#ed-%s" % news_slug(item),
-            "s": " ".join(extract_h4_titles(texts[item["name"]], 5)),
+            "u": "news.html#day-%s" % a["day"].replace(".", "-"),
+            "s": a["text"][:300],
         })
-    for item in digests:
-        title = "%s, %s" % (fmt_date(item["date"]), weekday_bg(item["date"])) \
-            if item["kind"] == "daily" else item["label"]
+    for e in upcoming:
+        dt = datetime.strptime(e["date"], "%Y-%m-%d")
         search_entries.append({
-            "t": "Дайджест — %s" % title,
-            "d": fmt_date(item["date"]),
+            "t": e.get("name", ""),
+            "d": "%s, %s %s · %s" % (fmt_date(dt), weekday_bg(dt),
+                                     (e.get("start") or ""), e.get("venue", "")),
             "k": "Събития",
-            "u": "events.html#dg-%s" % digest_slug(item),
-            "s": " ".join(extract_first_headings(texts[item["name"]], 5)),
+            "u": "events.html#ev-%s" % e.get("number", ""),
+            "s": "%s %s" % (e.get("category", ""),
+                            truncate_text(e.get("description_bg", ""), 200)),
         })
+    search_entries.append({
+        "t": "Подари Време — предстоящи посещения и обучения",
+        "d": "", "k": "Страница", "u": "podari.html",
+        "s": "Доброволчество с деца — посещения, обучения, контакти.",
+    })
     for sec_id, nav_label, title, intro, fname, emoji in single_defs:
         if fname not in singles:
             continue
@@ -858,12 +1144,12 @@ def main():
         json.dump(search_entries, f, ensure_ascii=False)
     search_body = (
         '<div class="container" id="top"><div class="page-hero">'
-        '<p class="kicker">Търсене</p><h1>Търси в дайджестите</h1>'
-        '<p class="lede">В изданията и събитията — наведнъж.</p></div>'
+        '<p class="kicker">Търсене</p><h1>Търси в новините и събитията</h1>'
+        '<p class="lede">В новините и събитията — наведнъж.</p></div>'
         '<div class="searchbar" role="search">'
-        '<input id="q" type="search" placeholder="Напиши дума — например преход, джаз, Подари Време…" aria-label="Търси в дайджестите">'
+        '<input id="q" type="search" placeholder="Напиши дума — например преход, джаз, Подари Време…" aria-label="Търси в новините и събитията">'
         '<p class="count-line" id="count" aria-live="polite"></p>'
-        '</div><div id="results"><p class="no-results">Напиши дума — търси в изданията и събитията.</p></div>'
+        '</div><div id="results"><p class="no-results">Напиши дума — търси в новините и събитията.</p></div>'
         '</div>'
     )
     sizes["search.html"] = write_page(
@@ -877,21 +1163,21 @@ def main():
     sizes["search.json"] = os.path.getsize(os.path.join(SITE_DIR, "search.json"))
 
     counts = {
-        "total": len(news) + len(digests) + len(singles),
-        "news": len(news), "digest": len(digests),
-        "podari": 1 if "podari-vreme.html" in singles else 0,
+        "total": len(news) + len(upcoming) + len(singles),
+        "news": len(articles), "digest": len(digests),
+        "podari": 1 if podari_json_ok else 0,
         "radar": 1 if "radar-actions.html" in singles else 0,
         "cars": 1 if "cars-dashboard.html" in singles else 0,
         "aiplan": 1 if "udemy-plan-2026-11-05-site.html" in singles else 0,
-        "events": len([d for d in digests if d["kind"] == "evenings"]),
+        "events": len(upcoming),
         "weather": 1 if "weather.html" in singles else 0,
         "scout": len(scout_files),
         "other": len(other_events),
     }
-    print("INDEX: total=%d news=%d digest=%d podari=%d radar=%d cars=%d aiplan=%d "
-          "events=%d weather=%d scout=%d other=%d updated=%s"
-          % (counts["total"], counts["news"], counts["digest"], counts["podari"],
-             counts["radar"], counts["cars"], counts["aiplan"], counts["events"],
+    print("INDEX: total=%d news=%d events=%d podari=%d radar=%d cars=%d aiplan=%d "
+          "weather=%d scout=%d other=%d updated=%s"
+          % (counts["total"], counts["news"], counts["events"], counts["podari"],
+             counts["radar"], counts["cars"], counts["aiplan"],
              counts["weather"], counts["scout"],
              counts["other"], updated))
     print("INDEX-SIZE: " + " ".join("%s=%d" % (k, v) for k, v in sorted(sizes.items())))

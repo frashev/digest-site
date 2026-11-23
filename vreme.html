@@ -167,6 +167,17 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
 .fchip{padding:11px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;touch-action:manipulation;font-family:var(--font-sans);color:var(--ink)}
 .fchip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* Меню с филтри (Събития + Новини): търсене + чипове, сгъва се на телефон */
+.toolbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:12px 14px;margin:12px 0 4px;position:sticky;top:110px;z-index:40}
+.toolbar input{width:100%;padding:12px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font-size:16px;font-family:var(--font-sans);background:var(--surface);color:var(--ink)}
+.toolbar .label{font-size:13px;font-weight:700;color:var(--muted);margin:12px 4px 2px;display:block}
+.toolbar .chips{margin:4px 0}
+.toolbar .btn{padding:11px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;touch-action:manipulation;font-family:var(--font-sans);color:var(--ink)}
+.toolbar .btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.toolbar .filter-toggle{font-weight:700;width:100%;text-align:left;margin-bottom:8px}
+.toolbar.closed .label,.toolbar.closed .chips,.toolbar.closed .btn:not(.filter-toggle){display:none}
+.toolbar.closed .filter-toggle{margin-bottom:0}
+@media (max-width:900px){.toolbar{top:104px}}
 .ev-day{margin:0 0 6px}
 .ev-day h2{font-size:clamp(22px,3vw,26px)}
 .ev-day .count{color:var(--muted);font-size:15px;font-weight:400;font-family:var(--font-sans)}
@@ -284,10 +295,12 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
     setTimeout(function(){ el.scrollIntoView({block:'start'}); fitIframes(); }, 350);
   }
 })();
-// Търсене на страницата (новини/събития): филтрира картите по data-search
+// Търсене на страницата (архив и единични страници): филтрира картите по data-search.
+// Страниците Събития и Новини имат собствен единен филтър (виж по-долу) — тук се пропускат.
 (function(){
   var q = document.getElementById('q');
   if (!q) return;
+  if (document.getElementById('evFilters') || document.getElementById('newsFilters')) return;
   var countEl = document.getElementById('count');
   var noRes = document.getElementById('no-results');
   function apply(){
@@ -339,30 +352,165 @@ window.addEventListener('resize', fitIframes);
   var cell = document.querySelector('.wx-hour[data-date="' + iso + '"][data-hour="' + now.getHours() + '"]');
   if (cell) { cell.classList.add('wx-now'); cell.scrollIntoView({block: 'nearest', inline: 'center'}); }
 })();
-// Новини: филтър по категория (чипове)
+// Новини: ЕДИНЕН филтър — търсене + категория + ден, комбинирани
+// (преди търсенето и категорията се презаписваха взаимно)
 (function(){
-  var chips = document.querySelectorAll('#catChips .fchip');
-  if (!chips.length) return;
-  chips.forEach(function(b){
+  var tb = document.getElementById('newsFilters');
+  if (!tb) return;
+  var q = document.getElementById('q');
+  var countEl = document.getElementById('count');
+  var noRes = document.getElementById('no-results');
+  var cat = 'all', day = 'all';
+  function apply(){
+    var needle = (q.value || '').trim().toLowerCase();
+    var visible = 0, total = 0;
+    document.querySelectorAll('.news-item').forEach(function(c){
+      total++;
+      var okQ = !needle || c.dataset.search.toLowerCase().indexOf(needle) !== -1;
+      var okCat = cat === 'all' || c.dataset.cat === cat;
+      var okDay = day === 'all' || c.dataset.day === day;
+      var hit = okQ && okCat && okDay;
+      c.hidden = !hit;
+      if (hit) visible++;
+    });
+    document.querySelectorAll('.news-ed-group').forEach(function(g){
+      var any = false;
+      g.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
+      g.hidden = !any;
+    });
+    document.querySelectorAll('.news-day').forEach(function(s){
+      var any = false;
+      s.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
+      s.hidden = !any;
+    });
+    var filtered = needle || cat !== 'all' || day !== 'all';
+    if (countEl) countEl.textContent = filtered ? ('Показани: ' + visible + ' от ' + total) : '';
+    if (noRes) noRes.hidden = visible > 0;
+  }
+  var tgl = document.getElementById('newsFilterToggle');
+  if (tgl) tgl.addEventListener('click', function(){ tb.classList.toggle('closed'); });
+  if (window.innerWidth < 900) tb.classList.add('closed');
+  tb.querySelectorAll('#catChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
-      chips.forEach(function(x){ x.classList.remove('on'); });
-      b.classList.add('on');
-      var cat = b.dataset.cat;
-      document.querySelectorAll('.news-item').forEach(function(c){
-        c.hidden = !(cat === 'all' || c.dataset.cat === cat);
-      });
-      document.querySelectorAll('.news-ed-group').forEach(function(g){
-        var any = false;
-        g.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
-        g.hidden = !any;
-      });
-      document.querySelectorAll('.news-day').forEach(function(s){
-        var any = false;
-        s.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
-        s.hidden = !any;
-      });
+      tb.querySelectorAll('#catChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); cat = b.dataset.cat; apply();
     });
   });
+  tb.querySelectorAll('#newsDayChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      tb.querySelectorAll('#newsDayChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); day = b.dataset.day; apply();
+    });
+  });
+  var todayBtn = document.getElementById('newsToday');
+  if (todayBtn) todayBtn.addEventListener('click', function(){
+    var d = new Date();
+    var dd = String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0');
+    day = dd;
+    tb.querySelectorAll('#newsDayChips .fchip').forEach(function(x){ x.classList.toggle('on', x.dataset.day === dd); });
+    apply();
+  });
+  q.addEventListener('input', apply);
+})();
+// Събития: ЕДИНЕН филтър — търсене + ден (няколко) + категория + източник +
+// разстояние + само безплатни / само нови / само с посочен час + Днес / Този уикенд
+(function(){
+  var tb = document.getElementById('evFilters');
+  if (!tb) return;
+  var q = document.getElementById('q');
+  var countEl = document.getElementById('count');
+  var noRes = document.getElementById('no-results');
+  var cat = '', src = '', dist = '';
+  var freeOnly = false, newOnly = false, timeOnly = false;
+  var activeDays = new Set();
+  tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){ activeDays.add(b.dataset.day); });
+  function anyFilter(){
+    return (q.value || '').trim() !== '' || cat !== '' || src !== '' || dist !== '' ||
+      freeOnly || newOnly || timeOnly || activeDays.size !== tb.querySelectorAll('#evDayChips .fchip').length;
+  }
+  function apply(){
+    var needle = (q.value || '').trim().toLowerCase();
+    var visible = 0, total = 0;
+    document.querySelectorAll('.ev-card').forEach(function(c){
+      total++;
+      var okQ = !needle || c.dataset.search.toLowerCase().indexOf(needle) !== -1;
+      var okCat = !cat || c.dataset.cat === cat;
+      var okSrc = !src || c.dataset.src === src;
+      var okDist = !dist || (dist === 'far' ? c.dataset.far === '1' : c.dataset.far === '0');
+      var okFree = !freeOnly || c.dataset.free === '1';
+      var okNew = !newOnly || c.dataset.new === '1';
+      var okTime = !timeOnly || c.dataset.time === '1';
+      var okDay = activeDays.has(c.dataset.day);
+      var hit = okQ && okCat && okSrc && okDist && okFree && okNew && okTime && okDay;
+      c.hidden = !hit;
+      if (hit) visible++;
+    });
+    document.querySelectorAll('.ev-day').forEach(function(s){
+      var any = false;
+      s.querySelectorAll('.ev-card').forEach(function(c){ if (!c.hidden) any = true; });
+      s.hidden = !any;
+    });
+    if (countEl) countEl.textContent = anyFilter() ? ('Показани: ' + visible + ' от ' + total + ' събития') : '';
+    if (noRes) noRes.hidden = visible > 0;
+  }
+  var tgl = document.getElementById('evFilterToggle');
+  if (tgl) tgl.addEventListener('click', function(){ tb.classList.toggle('closed'); });
+  if (window.innerWidth < 900) tb.classList.add('closed');
+  tb.querySelectorAll('#evCatChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      tb.querySelectorAll('#evCatChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); cat = b.dataset.cat || ''; apply();
+    });
+  });
+  tb.querySelectorAll('#evSrcChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      tb.querySelectorAll('#evSrcChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); src = b.dataset.src || ''; apply();
+    });
+  });
+  tb.querySelectorAll('#evDistChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      tb.querySelectorAll('#evDistChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); dist = b.dataset.dist || ''; apply();
+    });
+  });
+  function toggleBtn(id, get, set){
+    var b = document.getElementById(id);
+    if (!b) return;
+    b.addEventListener('click', function(){ var v = !get(); set(v); b.classList.toggle('on', v); apply(); });
+  }
+  toggleBtn('evFreeBtn', function(){ return freeOnly; }, function(v){ freeOnly = v; });
+  toggleBtn('evNewBtn', function(){ return newOnly; }, function(v){ newOnly = v; });
+  toggleBtn('evTimeBtn', function(){ return timeOnly; }, function(v){ timeOnly = v; });
+  tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      var d = b.dataset.day;
+      if (activeDays.has(d)) { activeDays.delete(d); b.classList.remove('on'); }
+      else { activeDays.add(d); b.classList.add('on'); }
+      apply();
+    });
+  });
+  function setDays(pred){
+    tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){
+      var on = pred(b.dataset.day);
+      b.classList.toggle('on', on);
+      if (on) activeDays.add(b.dataset.day); else activeDays.delete(b.dataset.day);
+    });
+    apply();
+  }
+  var allBtn = document.getElementById('evAllDays');
+  if (allBtn) allBtn.addEventListener('click', function(){ setDays(function(){ return true; }); });
+  var weBtn = document.getElementById('evWeekend');
+  if (weBtn) weBtn.addEventListener('click', function(){
+    setDays(function(iso){ var g = new Date(iso + 'T12:00:00').getDay(); return g === 0 || g === 6; });
+  });
+  var todayBtn = document.getElementById('evToday');
+  if (todayBtn) todayBtn.addEventListener('click', function(){
+    var d = new Date();
+    var iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    setDays(function(x){ return x === iso; });
+  });
+  q.addEventListener('input', apply);
 })();
 // Плаваща стрелка вдясно: меню с разделите на текущата страница
 (function(){

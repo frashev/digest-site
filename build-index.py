@@ -141,6 +141,15 @@ def truncate_text(s, limit=240):
 
 
 NEWS_CAT_LABEL = {"ai": "🤖 AI и технологии", "bg": "🇧🇬 България", "world": "🌍 Свят"}
+# Източник на събитие (групиран за филтъра) — суровите стойности от регистъра
+SRC_LABEL = {"facebook-discover": "Facebook", "facebook-browser-search": "Facebook",
+             "togeda-api (PC feed)": "Togeda", "event-ai-extractor": "Колектор",
+             "tazivecher.bg": "Уеб", "allevents": "Уеб", "allevents.in": "Уеб",
+             "visitsofia.bg": "Уеб", "web-search": "Уеб", "gemini": "Уеб"}
+
+
+def src_label(raw):
+    return SRC_LABEL.get((raw or "").strip(), "Други")
 
 
 def parse_news_articles(html_text):
@@ -179,10 +188,10 @@ def news_item_html(a):
             % (esc(a["link"]), esc(a["link_label"] or "Източник"))) if a["link"] else ""
     chip = NEWS_CAT_LABEL.get(a["cat"], "")
     return (
-        '<article class="news-item" data-cat="%s" data-search="%s" style="border-left-color:%s">'
+        '<article class="news-item" data-cat="%s" data-day="%s" data-search="%s" style="border-left-color:%s">'
         '<span class="news-chip" style="border-color:%s;color:%s">%s</span>'
         '<h4>%s</h4><p>%s</p>%s</article>'
-        % (esc(a["cat"]), esc(search), esc(a["color"]), esc(a["color"]),
+        % (esc(a["cat"]), esc(a["day"]), esc(search), esc(a["color"]), esc(a["color"]),
            esc(a["color"]), esc(chip), esc(a["title"]), esc(a["text"]), link)
     )
 
@@ -502,7 +511,7 @@ def podari_site_sections(site):
     return "".join(parts)
 
 
-def event_card_html(e):
+def event_card_html(e, new_date=None):
     name = e.get("name") or ""
     start = e.get("start") or ""
     end = e.get("end") or ""
@@ -533,13 +542,19 @@ def event_card_html(e):
                      'target="_blank" rel="noopener">Карта</a>'
                      % urllib.parse.quote(e["maps_query"]))
     search = "%s %s %s %s %s" % (e.get("date", ""), name, place, cat, desc)
+    new = "1" if (new_date and e.get("first_seen") == new_date) else "0"
     return (
-        '<article class="ev-card" id="ev-%s" data-search="%s">'
+        '<article class="ev-card" id="ev-%s" data-search="%s" data-day="%s" '
+        'data-cat="%s" data-src="%s" data-free="%s" data-new="%s" data-time="%s" data-far="%s">'
         '<div><span class="ev-time">%s</span>%s %s</div>'
         '<h3>%s</h3><p class="ev-venue">%s</p>%s'
         '<p class="ev-links">%s</p></article>'
-        % (esc(str(e.get("number", ""))), esc(search), esc(time_txt),
-           free_badge, cat_chip, esc(name), esc(place), desc_html,
+        % (esc(str(e.get("number", ""))), esc(search), esc(e.get("date", "")),
+           esc(cat), esc(src_label(e.get("source"))),
+           "1" if e.get("free") else "0", new,
+           "0" if e.get("time_unknown") else "1",
+           "1" if e.get("far") else "0",
+           esc(time_txt), free_badge, cat_chip, esc(name), esc(place), desc_html,
            " ".join(links))
     )
 
@@ -742,6 +757,17 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
 .fchip{padding:11px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;touch-action:manipulation;font-family:var(--font-sans);color:var(--ink)}
 .fchip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* Меню с филтри (Събития + Новини): търсене + чипове, сгъва се на телефон */
+.toolbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:12px 14px;margin:12px 0 4px;position:sticky;top:110px;z-index:40}
+.toolbar input{width:100%;padding:12px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font-size:16px;font-family:var(--font-sans);background:var(--surface);color:var(--ink)}
+.toolbar .label{font-size:13px;font-weight:700;color:var(--muted);margin:12px 4px 2px;display:block}
+.toolbar .chips{margin:4px 0}
+.toolbar .btn{padding:11px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;touch-action:manipulation;font-family:var(--font-sans);color:var(--ink)}
+.toolbar .btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.toolbar .filter-toggle{font-weight:700;width:100%;text-align:left;margin-bottom:8px}
+.toolbar.closed .label,.toolbar.closed .chips,.toolbar.closed .btn:not(.filter-toggle){display:none}
+.toolbar.closed .filter-toggle{margin-bottom:0}
+@media (max-width:900px){.toolbar{top:104px}}
 .ev-day{margin:0 0 6px}
 .ev-day h2{font-size:clamp(22px,3vw,26px)}
 .ev-day .count{color:var(--muted);font-size:15px;font-weight:400;font-family:var(--font-sans)}
@@ -846,10 +872,12 @@ JS = """
     setTimeout(function(){ el.scrollIntoView({block:'start'}); fitIframes(); }, 350);
   }
 })();
-// Търсене на страницата (новини/събития): филтрира картите по data-search
+// Търсене на страницата (архив и единични страници): филтрира картите по data-search.
+// Страниците Събития и Новини имат собствен единен филтър (виж по-долу) — тук се пропускат.
 (function(){
   var q = document.getElementById('q');
   if (!q) return;
+  if (document.getElementById('evFilters') || document.getElementById('newsFilters')) return;
   var countEl = document.getElementById('count');
   var noRes = document.getElementById('no-results');
   function apply(){
@@ -901,30 +929,165 @@ window.addEventListener('resize', fitIframes);
   var cell = document.querySelector('.wx-hour[data-date="' + iso + '"][data-hour="' + now.getHours() + '"]');
   if (cell) { cell.classList.add('wx-now'); cell.scrollIntoView({block: 'nearest', inline: 'center'}); }
 })();
-// Новини: филтър по категория (чипове)
+// Новини: ЕДИНЕН филтър — търсене + категория + ден, комбинирани
+// (преди търсенето и категорията се презаписваха взаимно)
 (function(){
-  var chips = document.querySelectorAll('#catChips .fchip');
-  if (!chips.length) return;
-  chips.forEach(function(b){
+  var tb = document.getElementById('newsFilters');
+  if (!tb) return;
+  var q = document.getElementById('q');
+  var countEl = document.getElementById('count');
+  var noRes = document.getElementById('no-results');
+  var cat = 'all', day = 'all';
+  function apply(){
+    var needle = (q.value || '').trim().toLowerCase();
+    var visible = 0, total = 0;
+    document.querySelectorAll('.news-item').forEach(function(c){
+      total++;
+      var okQ = !needle || c.dataset.search.toLowerCase().indexOf(needle) !== -1;
+      var okCat = cat === 'all' || c.dataset.cat === cat;
+      var okDay = day === 'all' || c.dataset.day === day;
+      var hit = okQ && okCat && okDay;
+      c.hidden = !hit;
+      if (hit) visible++;
+    });
+    document.querySelectorAll('.news-ed-group').forEach(function(g){
+      var any = false;
+      g.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
+      g.hidden = !any;
+    });
+    document.querySelectorAll('.news-day').forEach(function(s){
+      var any = false;
+      s.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
+      s.hidden = !any;
+    });
+    var filtered = needle || cat !== 'all' || day !== 'all';
+    if (countEl) countEl.textContent = filtered ? ('Показани: ' + visible + ' от ' + total) : '';
+    if (noRes) noRes.hidden = visible > 0;
+  }
+  var tgl = document.getElementById('newsFilterToggle');
+  if (tgl) tgl.addEventListener('click', function(){ tb.classList.toggle('closed'); });
+  if (window.innerWidth < 900) tb.classList.add('closed');
+  tb.querySelectorAll('#catChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
-      chips.forEach(function(x){ x.classList.remove('on'); });
-      b.classList.add('on');
-      var cat = b.dataset.cat;
-      document.querySelectorAll('.news-item').forEach(function(c){
-        c.hidden = !(cat === 'all' || c.dataset.cat === cat);
-      });
-      document.querySelectorAll('.news-ed-group').forEach(function(g){
-        var any = false;
-        g.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
-        g.hidden = !any;
-      });
-      document.querySelectorAll('.news-day').forEach(function(s){
-        var any = false;
-        s.querySelectorAll('.news-item').forEach(function(c){ if (!c.hidden) any = true; });
-        s.hidden = !any;
-      });
+      tb.querySelectorAll('#catChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); cat = b.dataset.cat; apply();
     });
   });
+  tb.querySelectorAll('#newsDayChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      tb.querySelectorAll('#newsDayChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); day = b.dataset.day; apply();
+    });
+  });
+  var todayBtn = document.getElementById('newsToday');
+  if (todayBtn) todayBtn.addEventListener('click', function(){
+    var d = new Date();
+    var dd = String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0');
+    day = dd;
+    tb.querySelectorAll('#newsDayChips .fchip').forEach(function(x){ x.classList.toggle('on', x.dataset.day === dd); });
+    apply();
+  });
+  q.addEventListener('input', apply);
+})();
+// Събития: ЕДИНЕН филтър — търсене + ден (няколко) + категория + източник +
+// разстояние + само безплатни / само нови / само с посочен час + Днес / Този уикенд
+(function(){
+  var tb = document.getElementById('evFilters');
+  if (!tb) return;
+  var q = document.getElementById('q');
+  var countEl = document.getElementById('count');
+  var noRes = document.getElementById('no-results');
+  var cat = '', src = '', dist = '';
+  var freeOnly = false, newOnly = false, timeOnly = false;
+  var activeDays = new Set();
+  tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){ activeDays.add(b.dataset.day); });
+  function anyFilter(){
+    return (q.value || '').trim() !== '' || cat !== '' || src !== '' || dist !== '' ||
+      freeOnly || newOnly || timeOnly || activeDays.size !== tb.querySelectorAll('#evDayChips .fchip').length;
+  }
+  function apply(){
+    var needle = (q.value || '').trim().toLowerCase();
+    var visible = 0, total = 0;
+    document.querySelectorAll('.ev-card').forEach(function(c){
+      total++;
+      var okQ = !needle || c.dataset.search.toLowerCase().indexOf(needle) !== -1;
+      var okCat = !cat || c.dataset.cat === cat;
+      var okSrc = !src || c.dataset.src === src;
+      var okDist = !dist || (dist === 'far' ? c.dataset.far === '1' : c.dataset.far === '0');
+      var okFree = !freeOnly || c.dataset.free === '1';
+      var okNew = !newOnly || c.dataset.new === '1';
+      var okTime = !timeOnly || c.dataset.time === '1';
+      var okDay = activeDays.has(c.dataset.day);
+      var hit = okQ && okCat && okSrc && okDist && okFree && okNew && okTime && okDay;
+      c.hidden = !hit;
+      if (hit) visible++;
+    });
+    document.querySelectorAll('.ev-day').forEach(function(s){
+      var any = false;
+      s.querySelectorAll('.ev-card').forEach(function(c){ if (!c.hidden) any = true; });
+      s.hidden = !any;
+    });
+    if (countEl) countEl.textContent = anyFilter() ? ('Показани: ' + visible + ' от ' + total + ' събития') : '';
+    if (noRes) noRes.hidden = visible > 0;
+  }
+  var tgl = document.getElementById('evFilterToggle');
+  if (tgl) tgl.addEventListener('click', function(){ tb.classList.toggle('closed'); });
+  if (window.innerWidth < 900) tb.classList.add('closed');
+  tb.querySelectorAll('#evCatChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      tb.querySelectorAll('#evCatChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); cat = b.dataset.cat || ''; apply();
+    });
+  });
+  tb.querySelectorAll('#evSrcChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      tb.querySelectorAll('#evSrcChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); src = b.dataset.src || ''; apply();
+    });
+  });
+  tb.querySelectorAll('#evDistChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      tb.querySelectorAll('#evDistChips .fchip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); dist = b.dataset.dist || ''; apply();
+    });
+  });
+  function toggleBtn(id, get, set){
+    var b = document.getElementById(id);
+    if (!b) return;
+    b.addEventListener('click', function(){ var v = !get(); set(v); b.classList.toggle('on', v); apply(); });
+  }
+  toggleBtn('evFreeBtn', function(){ return freeOnly; }, function(v){ freeOnly = v; });
+  toggleBtn('evNewBtn', function(){ return newOnly; }, function(v){ newOnly = v; });
+  toggleBtn('evTimeBtn', function(){ return timeOnly; }, function(v){ timeOnly = v; });
+  tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){
+    b.addEventListener('click', function(){
+      var d = b.dataset.day;
+      if (activeDays.has(d)) { activeDays.delete(d); b.classList.remove('on'); }
+      else { activeDays.add(d); b.classList.add('on'); }
+      apply();
+    });
+  });
+  function setDays(pred){
+    tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){
+      var on = pred(b.dataset.day);
+      b.classList.toggle('on', on);
+      if (on) activeDays.add(b.dataset.day); else activeDays.delete(b.dataset.day);
+    });
+    apply();
+  }
+  var allBtn = document.getElementById('evAllDays');
+  if (allBtn) allBtn.addEventListener('click', function(){ setDays(function(){ return true; }); });
+  var weBtn = document.getElementById('evWeekend');
+  if (weBtn) weBtn.addEventListener('click', function(){
+    setDays(function(iso){ var g = new Date(iso + 'T12:00:00').getDay(); return g === 0 || g === 6; });
+  });
+  var todayBtn = document.getElementById('evToday');
+  if (todayBtn) todayBtn.addEventListener('click', function(){
+    var d = new Date();
+    var iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    setDays(function(x){ return x === iso; });
+  });
+  q.addEventListener('input', apply);
 })();
 // Плаваща стрелка вдясно: меню с разделите на текущата страница
 (function(){
@@ -1540,55 +1703,102 @@ def main():
                 % (day.replace(".", "-"), weekday_bg(dt).capitalize(),
                    dt.strftime("%d.%m"), len(days[day]), "".join(group_html))
             )
+        news_day_chips = ('<button class="fchip on" data-day="all">Всички дни</button>' +
+                          "".join(
+                              '<button class="fchip" data-day="%s">%s %s</button>'
+                              % (day, weekday_bg(day_date(day, ref_date)).capitalize()[:3], day)
+                              for day in sorted(days, reverse=True)))
         news_body = (
             '<div class="container" id="top"><div class="page-hero">'
             '<p class="kicker">Новини</p><h1>Новини — сутрин, следобед и вечер</h1>'
             '<p class="lede">%d новини от последните 3 дни · чети направо тук, '
             'без да отваряш отделни файлове.</p></div>'
-            '<div class="searchbar" role="search">'
+            '<div class="toolbar" id="newsFilters" role="search">'
+            '<button class="btn filter-toggle" id="newsFilterToggle">☰ Филтри</button>'
             '<input id="q" type="search" placeholder="Търси в новините…" aria-label="Търси в новините">'
+            '<span class="label">Категория:</span>'
             '<div class="chips" id="catChips">'
             '<button class="fchip on" data-cat="all">Всички</button>'
             '<button class="fchip" data-cat="ai">🤖 AI</button>'
             '<button class="fchip" data-cat="bg">🇧🇬 България</button>'
             '<button class="fchip" data-cat="world">🌍 Свят</button>'
             '</div>'
+            '<span class="label">Ден:</span>'
+            '<div class="chips" id="newsDayChips">%s</div>'
+            '<button class="btn" id="newsToday">📅 Днес</button>'
             '<p class="count-line" id="count" aria-live="polite"></p>'
             '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
             '</div></div>'
             '%s'
-            % (len(articles), "".join(day_sections))
+            % (len(articles), news_day_chips, "".join(day_sections))
         )
         sizes["news.html"] = write_page(
             "news.html", shell("news", "Новини", news_body))
 
     # ================= СЪБИТИЯ (v3: от регистъра, от днес нататък) =================
     if upcoming:
+        last_crawl = max((e.get("first_seen") or "") for e in upcoming)
+        new_count = sum(1 for e in upcoming if e.get("first_seen") == last_crawl)
         by_day = {}
         for e in upcoming:
             by_day.setdefault(e["date"], []).append(e)
         ev_sections = []
         for iso in sorted(by_day):
             dt = datetime.strptime(iso, "%Y-%m-%d")
-            cards = "".join(event_card_html(e) for e in by_day[iso])
+            cards = "".join(event_card_html(e, new_date=last_crawl) for e in by_day[iso])
             ev_sections.append(
                 '<section class="ev-day" id="day-%s"><div class="container">'
                 '<h2>%s, %s <span class="count">· %d събития</span></h2>%s</div></section>'
                 % (iso, weekday_bg(dt).capitalize(), dt.strftime("%d.%m"),
                    len(by_day[iso]), cards)
             )
+        ev_day_chips = "".join(
+            '<button class="fchip on" data-day="%s">%s %s</button>'
+            % (iso, weekday_bg(datetime.strptime(iso, "%Y-%m-%d")).capitalize()[:3],
+               datetime.strptime(iso, "%Y-%m-%d").strftime("%d.%m"))
+            for iso in sorted(by_day)
+        )
+        ev_cats = sorted({e.get("category") or "" for e in upcoming if e.get("category")})
+        ev_cat_chips = ('<button class="fchip on" data-cat="">Всички</button>' +
+                        "".join('<button class="fchip" data-cat="%s">%s</button>'
+                                % (esc(c), esc(c)) for c in ev_cats))
+        ev_srcs = sorted({src_label(e.get("source")) for e in upcoming})
+        ev_src_chips = ('<button class="fchip on" data-src="">Всички</button>' +
+                        "".join('<button class="fchip" data-src="%s">%s</button>'
+                                % (esc(s), esc(s)) for s in ev_srcs))
         events_body = (
             '<div class="container" id="top"><div class="page-hero">'
             '<p class="kicker">Събития</p><h1>Събития — от днес нататък</h1>'
-            '<p class="lede">%d събития · 🆓 %d безплатни · всички събрани събития, '
+            '<p class="lede">%d събития · 🆓 %d безплатни · 🆕 %d нови · всички събрани събития, '
             'подредени по дни. Старите не се показват.</p></div>'
-            '<div class="searchbar" role="search">'
+            '<div class="toolbar" id="evFilters" role="search">'
+            '<button class="btn filter-toggle" id="evFilterToggle">☰ Филтри</button>'
             '<input id="q" type="search" placeholder="Търси в събитията…" aria-label="Търси в събитията">'
+            '<span class="label">Дни:</span>'
+            '<div class="chips" id="evDayChips">%s</div>'
+            '<button class="btn" id="evAllDays">Всички дни</button>'
+            '<button class="btn" id="evWeekend">🎉 Този уикенд</button>'
+            '<button class="btn" id="evToday">📅 Днес</button>'
+            '<span class="label">Категории:</span>'
+            '<div class="chips" id="evCatChips">%s</div>'
+            '<span class="label">Източник:</span>'
+            '<div class="chips" id="evSrcChips">%s</div>'
+            '<span class="label">Разстояние:</span>'
+            '<div class="chips" id="evDistChips">'
+            '<button class="fchip on" data-dist="">Всички</button>'
+            '<button class="fchip" data-dist="sofia">София</button>'
+            '<button class="fchip" data-dist="far">🚗 По-далече</button></div>'
+            '<span class="label">Още:</span>'
+            '<div class="chips">'
+            '<button class="fchip" id="evFreeBtn">🆓 само безплатни</button>'
+            '<button class="fchip" id="evNewBtn">🆕 само нови</button>'
+            '<button class="fchip" id="evTimeBtn">⏰ само с посочен час</button></div>'
             '<p class="count-line" id="count" aria-live="polite"></p>'
             '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
             '</div></div>'
             '%s'
-            % (len(upcoming), free_count, "".join(ev_sections))
+            % (len(upcoming), free_count, new_count, ev_day_chips, ev_cat_chips,
+               ev_src_chips, "".join(ev_sections))
         )
         sizes["events.html"] = write_page(
             "events.html", shell("events", "Събития", events_body))

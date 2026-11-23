@@ -212,10 +212,9 @@ a{color:var(--accent);font-weight:600}
 .brand img{width:32px;height:32px;flex:none}
 .brand-name{font-family:var(--font-serif);font-size:20px;font-weight:600;white-space:nowrap}
 .brand-date{color:var(--muted);font-size:13px;white-space:nowrap}
-.nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 10px;-webkit-overflow-scrolling:touch;
-  -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent 100%);
-  mask-image:linear-gradient(90deg,#000 88%,transparent 100%)}
-.nav::-webkit-scrollbar{display:none}
+.nav{border-top:1px solid var(--border)}
+.nav-inner{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 16px 10px;max-width:1240px;margin:0 auto;-webkit-overflow-scrolling:touch}
+.nav-inner::-webkit-scrollbar{display:none}
 .nav a{flex:none;padding:8px 14px;border-radius:var(--r-pill);color:var(--muted);text-decoration:none;font-size:15px;font-weight:500;min-height:36px;display:inline-flex;align-items:center}
 .nav a[aria-current="page"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
 .page-hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
@@ -300,10 +299,14 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 """
 
 JS = """
-// Менюто се скролва до активната страница
+// Менюто се скролва до активната страница (центрира я в лентата)
 (function(){
-  var cur = document.querySelector('.nav a[aria-current="page"]');
-  if (cur) cur.scrollIntoView({inline:'center', block:'nearest'});
+  var nav = document.querySelector('.nav-inner');
+  var cur = nav && nav.querySelector('a[aria-current="page"]');
+  if (nav && cur) {
+    var r = cur.getBoundingClientRect(), n = nav.getBoundingClientRect();
+    nav.scrollLeft += (r.left + r.width / 2) - (n.left + n.width / 2);
+  }
 })();
 // Зареждане на iframe при първо отваряне на <details>
 (function(){
@@ -644,7 +647,7 @@ def main():
             '<img src="favicon.svg" alt="" width="32" height="32">'
             '<span class="brand-name">Моите дайджести</span></a>'
             '<span class="brand-date">' + esc(today_str) + '</span></div>'
-            '<nav class="nav" aria-label="Раздели">' + nav_html(active) + '</nav>'
+            '<nav class="nav" aria-label="Раздели"><div class="nav-inner">' + nav_html(active) + '</div></nav>'
             '</div></header>\n'
             '<main id="main">' + body_html + '</main>\n'
             '<footer><div class="container">'
@@ -894,7 +897,7 @@ def main():
         '<p class="kicker">Търсене</p><h1>Търси в дайджестите</h1>'
         '<p class="lede">В изданията, събитията и седмицата — наведнъж.</p></div>'
         '<div class="searchbar" role="search">'
-        '<input id="q" type="search" placeholder="Напиши дума — например „преход“, „джаз“, „Подари Време“…“ aria-label="Търси в дайджестите">'
+        '<input id="q" type="search" placeholder="Напиши дума — например преход, джаз, Подари Време…" aria-label="Търси в дайджестите">'
         '<p class="count-line" id="count" aria-live="polite"></p>'
         '</div><div id="results"><p class="no-results">Напиши дума — търси в изданията, събитията и седмицата.</p></div>'
         '</div>'

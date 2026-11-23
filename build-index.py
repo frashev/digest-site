@@ -243,7 +243,7 @@ def podari_site_sections(site):
     m = site.get("mission", {})
     if m:
         parts.append(
-            '<section><div class="container"><h2>Мисията в числа</h2>'
+            '<section id="pv-mission"><div class="container"><h2>Мисията в числа</h2>'
             '<p class="meta">„%s“</p><div class="grid">'
             '<article class="card"><p class="pv-big">%d</p><p class="meta">години с децата</p></article>'
             '<article class="card"><p class="pv-big">%d</p><p class="meta">активно ангажирани доброволци</p></article>'
@@ -274,7 +274,7 @@ def podari_site_sections(site):
                    esc(site.get("guide_url", "")))
             )
         parts.append(
-            '<section><div class="container"><h2>Как се става доброволец</h2>'
+            '<section id="pv-join"><div class="container"><h2>Как се става доброволец</h2>'
             '<div class="grid">%s</div>%s</div></section>' % (cards, rules_html)
         )
     ac = site.get("academy", {})
@@ -295,7 +295,7 @@ def podari_site_sections(site):
             for p in ac.get("pricing", [])
         )
         parts.append(
-            '<section><div class="container"><h2>Академията</h2>'
+            '<section id="pv-academy"><div class="container"><h2>Академията</h2>'
             '<p class="meta">%s</p><div class="grid">%s</div>%s'
             '<p class="meta">%s</p>'
             '<p><a href="%s" target="_blank" rel="noopener">Академията на podarivreme.org →</a></p>'
@@ -306,7 +306,7 @@ def podari_site_sections(site):
     ws = site.get("work_school", {})
     if ws:
         parts.append(
-            '<section><div class="container"><h2>%s</h2><article class="card">'
+            '<section id="pv-work"><div class="container"><h2>%s</h2><article class="card">'
             '<p class="meta">%s</p><p class="meta">%s · %d младежи от цялата страна · '
             'база: %s</p><p class="meta">Екипи: %s.</p><p class="meta">%s</p>'
             '<p class="meta">%s</p>'
@@ -325,7 +325,7 @@ def podari_site_sections(site):
             for d in docs
         )
         parts.append(
-            '<section><div class="container"><h2>Документи</h2>'
+            '<section id="pv-docs"><div class="container"><h2>Документи</h2>'
             '<ul class="pv-links">%s</ul>'
             '<p class="meta"><a href="%s" target="_blank" rel="noopener">'
             'Всички документи на сайта на фондацията →</a></p></div></section>'
@@ -341,7 +341,7 @@ def podari_site_sections(site):
             for s in stories
         )
         parts.append(
-            '<section><div class="container"><h2>Истории от блога</h2>'
+            '<section id="pv-stories"><div class="container"><h2>Истории от блога</h2>'
             '<ul class="pv-links">%s</ul>'
             '<p class="meta"><a href="%s" target="_blank" rel="noopener">'
             'Блогът на фондацията →</a></p></div></section>'
@@ -357,7 +357,7 @@ def podari_site_sections(site):
             for x in media
         )
         parts.append(
-            '<section><div class="container"><h2>В медиите</h2>'
+            '<section id="pv-media"><div class="container"><h2>В медиите</h2>'
             '<ul class="pv-links">%s</ul>'
             '<p class="meta"><a href="%s" target="_blank" rel="noopener">'
             'Всички медийни участия →</a></p></div></section>'
@@ -386,7 +386,7 @@ def podari_site_sections(site):
                        % (esc(nl.get("title", "")), esc(nl.get("desc", "")),
                           esc(nl.get("url", ""))))
         parts.append(
-            '<section><div class="container"><h2>Подкаст и бюлетин</h2>'
+            '<section id="pv-podcast"><div class="container"><h2>Подкаст и бюлетин</h2>'
             '<article class="card">%s%s</article></div></section>'
             % (pc_links, nl_html)
         )
@@ -400,7 +400,7 @@ def podari_site_sections(site):
         )
         bank = sup.get("bank", {})
         parts.append(
-            '<section><div class="container"><h2>Подкрепи</h2><article class="card">'
+            '<section id="pv-support"><div class="container"><h2>Подкрепи</h2><article class="card">'
             '<p class="meta">Изпълнени добрини до момента: +%d картички · +%d мисии · '
             '+%d продукта.</p><div class="pv-donate">%s</div>'
             '<p class="meta">С банков превод: IBAN %s · BIC %s · %s · титуляр: %s</p>'
@@ -414,7 +414,7 @@ def podari_site_sections(site):
     ct = site.get("contacts", {})
     if ct:
         parts.append(
-            '<section><div class="container"><article class="card"><h3>Контакти</h3>'
+            '<section id="pv-contacts"><div class="container"><article class="card"><h3>Контакти</h3>'
             '<p class="meta">%s · <a href="mailto:%s">%s</a> · %s · %s · '
             '<a href="%s" target="_blank" rel="noopener">podarivreme.org</a></p>'
             '<p class="meta">Въпроси към фондацията: <a href="mailto:%s">%s</a></p>'
@@ -699,6 +699,17 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .pv-amount{border:1px solid var(--border-strong);border-radius:var(--r-md);padding:10px 14px;background:var(--surface-2)}
 .pv-amount b{font-size:18px;color:var(--accent)}
 .pv-donate{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.subnav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+.subnav a{display:inline-block;padding:8px 14px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--surface);font-size:14px;font-weight:600;color:var(--ink-soft);text-decoration:none}
+.subnav a:hover{border-color:var(--accent);color:var(--accent)}
+.fab-nav{position:fixed;right:18px;bottom:18px;z-index:60;width:54px;height:54px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:26px;line-height:1;cursor:pointer;animation:fab-pulse 2.4s ease-out infinite}
+@keyframes fab-pulse{0%{box-shadow:0 4px 16px rgba(156,73,61,.45),0 0 0 0 rgba(156,73,61,.45)}70%{box-shadow:0 4px 16px rgba(156,73,61,.45),0 0 0 14px rgba(156,73,61,0)}100%{box-shadow:0 4px 16px rgba(156,73,61,.45),0 0 0 0 rgba(156,73,61,0)}}
+.fab-menu{position:fixed;right:18px;bottom:84px;z-index:60;width:min(300px,calc(100vw - 36px));max-height:min(60vh,420px);overflow-y:auto;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--shadow-lift);padding:6px;display:none}
+.fab-menu.open{display:block}
+.fab-menu a{display:block;padding:11px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:15px}
+.fab-menu a:hover{background:var(--surface-2)}
+.fab-menu .fab-title{padding:8px 12px 4px;color:var(--muted);font-size:13px;font-weight:700}
+@media (max-width:600px){.fab-nav{right:12px;bottom:12px}.fab-menu{right:12px;bottom:78px}}
 .sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:3px;vertical-align:-1px}
 .dist{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0}
 .dist td,.dist th{padding:4px 6px;border-bottom:1px solid var(--border);text-align:left}
@@ -825,6 +836,35 @@ window.addEventListener('resize', fitIframes);
         s.hidden = !any;
       });
     });
+  });
+})();
+// Плаваща стрелка вдясно: меню с разделите на текущата страница
+(function(){
+  var btn = document.getElementById('fabNav');
+  var menu = document.getElementById('fabMenu');
+  if (!btn || !menu) return;
+  var heads = document.querySelectorAll('main h2');
+  if (heads.length < 2) { btn.style.display = 'none'; return; }
+  var html = '<div class="fab-title">Раздели на тази страница</div>'
+    + '<a href="#top">⬆ Начало на страницата</a>';
+  heads.forEach(function(h, i){
+    if (!h.id) h.id = 'sec-' + (i + 1);
+    var t = (h.textContent || '').replace(/\\s+/g, ' ').trim();
+    if (t) html += '<a href="#' + h.id + '">' + t + '</a>';
+  });
+  menu.innerHTML = html;
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+  menu.addEventListener('click', function(e){
+    if (e.target.tagName === 'A') menu.classList.remove('open');
+  });
+  document.addEventListener('click', function(e){
+    if (!menu.contains(e.target) && e.target !== btn) menu.classList.remove('open');
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') menu.classList.remove('open');
   });
 })();
 """
@@ -1107,6 +1147,8 @@ def main():
             '<p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p>'
             '</div></footer>\n'
             '<script>' + JS + '</script>\n' + extra_js +
+            '<button id="fabNav" class="fab-nav" type="button" aria-label="Раздели на страницата" title="Раздели на страницата">↑</button>\n'
+            '<nav id="fabMenu" class="fab-menu" aria-label="Раздели на страницата"></nav>\n'
             '</body>\n</html>\n'
         )
         return page
@@ -1418,14 +1460,14 @@ def main():
                    esc(it["cat"]), podari_places_badge(it["places"]))
             )
         nearest_html = (
-            '<section><div class="container"><h2>Най-близки</h2>'
+            '<section id="pv-nearest"><div class="container"><h2>Най-близки</h2>'
             '<div class="grid">%s</div></div></section>' % "".join(near_cards)
         )
     podari_map_html = ""
     pm_path = os.path.join(SITE_DIR, "podari-map.html")
     if os.path.exists(pm_path):
         podari_map_html = (
-            '<section><div class="container">%s</div></section>'
+            '<section id="pv-map"><div class="container">%s</div></section>'
             % read_file("podari-map.html")
         )
     podari_days = []
@@ -1465,6 +1507,14 @@ def main():
         '<p class="kicker">Доброволчество</p><h1>Подари Време — предстоящи посещения</h1>'
         '<p class="lede">%d предстоящи · данните се обновяват от сайта на фондацията. '
         'Показват се само предстоящи дати — миналите изобщо не се виждат.</p></div></div>'
+        '<div class="container"><nav class="subnav" aria-label="Раздели на страницата">'
+        '<a href="#podari-list">Посещения</a><a href="#pv-nearest">Най-близки</a>'
+        '<a href="#pv-map">Карта</a><a href="#pv-mission">Мисията</a>'
+        '<a href="#pv-join">Как се става доброволец</a><a href="#pv-academy">Академията</a>'
+        '<a href="#pv-work">Училище за работа</a><a href="#pv-docs">Документи</a>'
+        '<a href="#pv-stories">Истории</a><a href="#pv-media">В медиите</a>'
+        '<a href="#pv-podcast">Подкаст</a><a href="#pv-support">Подкрепи</a>'
+        '<a href="#pv-contacts">Контакти</a></nav></div>'
         '%s%s'
         '<div class="container"><div class="searchbar" role="search">'
         '<input id="podari-q" type="search" placeholder="Търси място…" aria-label="Търси място">'

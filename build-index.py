@@ -436,13 +436,14 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .wx-date{font-size:18px;font-weight:700;font-family:var(--font-serif)}
 .wx-dow{color:var(--muted);font-size:14px}
 .wx-sum{font-size:13px;color:var(--muted)}
-.wx-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
-.wx-hour{flex:none;width:58px;text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 2px 7px;font-size:12px;line-height:1.5}
+.wx-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+@media (max-width:600px){.wx-strip{grid-template-columns:repeat(auto-fill,minmax(68px,1fr))}}
+.wx-hour{text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 2px 7px;font-size:12px;line-height:1.5}
 .wx-hour span{display:block}
 .wx-h{font-weight:700;color:var(--muted)}
 .wx-e{font-size:18px}
 .wx-t{font-weight:700;font-size:14px}
-.wx-p,.wx-w{color:var(--muted);font-size:11px}
+.wx-p,.wx-w,.wx-hum{color:var(--muted);font-size:11px}
 .wx-hour.wx-now{border-color:var(--accent);background:var(--accent-soft)}
 .wx-hour.wx-now .wx-h{color:var(--accent)}
 .inline-content .sub{color:var(--muted);font-size:14px}

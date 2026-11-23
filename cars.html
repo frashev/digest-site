@@ -131,13 +131,14 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .wx-date{font-size:18px;font-weight:700;font-family:var(--font-serif)}
 .wx-dow{color:var(--muted);font-size:14px}
 .wx-sum{font-size:13px;color:var(--muted)}
-.wx-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
-.wx-hour{flex:none;width:58px;text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 2px 7px;font-size:12px;line-height:1.5}
+.wx-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+@media (max-width:600px){.wx-strip{grid-template-columns:repeat(auto-fill,minmax(68px,1fr))}}
+.wx-hour{text-align:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 2px 7px;font-size:12px;line-height:1.5}
 .wx-hour span{display:block}
 .wx-h{font-weight:700;color:var(--muted)}
 .wx-e{font-size:18px}
 .wx-t{font-weight:700;font-size:14px}
-.wx-p,.wx-w{color:var(--muted);font-size:11px}
+.wx-p,.wx-w,.wx-hum{color:var(--muted);font-size:11px}
 .wx-hour.wx-now{border-color:var(--accent);background:var(--accent-soft)}
 .wx-hour.wx-now .wx-h{color:var(--accent)}
 .inline-content .sub{color:var(--muted);font-size:14px}
@@ -179,7 +180,7 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 <a class="skip-link" href="#main">Към съдържанието</a>
 <header class="site-header"><div class="container"><div class="header-row"><a class="brand" href="index.html"><img src="favicon.svg" alt="" width="32" height="32"><span class="brand-name">Моите дайджести</span></a><span class="brand-date">понеделник, 23 ноември 2026</span></div><nav class="nav" aria-label="Раздели"><div class="nav-inner"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html">RADAR</a><a href="cars.html" aria-current="page">Коли</a><a href="aiplan.html">AI план</a><a href="search.html">🔍 Търсене</a></div></nav></div></header>
 <main id="main"><div class="container" id="top"><div class="page-hero"><p class="kicker">Коли</p><h1>Коли</h1><p class="lede">Обяви за коли, които следя.</p></div></div><section><div class="container"><div class="frame-wrap"><iframe src="cars-dashboard.html" data-autosize loading="lazy" title="Съдържание"></iframe></div></div></section></main>
-<footer><div class="container"><div class="foot-nav"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html">RADAR</a><a href="cars.html" aria-current="page">Коли</a><a href="aiplan.html">AI план</a><a href="search.html">🔍 Търсене</a></div><p>Последно обновяване: 23.11.2026 10:06 · Обновява се автоматично на всеки час.</p><p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p></div></footer>
+<footer><div class="container"><div class="foot-nav"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html">RADAR</a><a href="cars.html" aria-current="page">Коли</a><a href="aiplan.html">AI план</a><a href="search.html">🔍 Търсене</a></div><p>Последно обновяване: 23.11.2026 10:10 · Обновява се автоматично на всеки час.</p><p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p></div></footer>
 <script>
 // Менюто се скролва до активната страница (центрира я в лентата)
 (function(){

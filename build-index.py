@@ -719,8 +719,8 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .subnav a.c3{color:#2F7D46;border-color:#2F7D46}
 .subnav a.c4{color:#2F6BA8;border-color:#2F6BA8}
 .subnav a.c5{color:#6A4FC0;border-color:#6A4FC0}
-.fab-nav{overflow:hidden;font-weight:700;text-shadow:0 0 12px rgba(255,255,255,1),0 0 3px rgba(255,255,255,.9),0 1px 2px rgba(0,0,0,.3)}
-.fab-nav::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.65),rgba(255,255,255,.12) 45%,transparent 65%)}
+.fab-nav{overflow:hidden;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,.35),0 0 2px rgba(0,0,0,.2)}
+.fab-nav::before{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(155deg,rgba(255,255,255,.9) 0%,rgba(255,255,255,.35) 22%,rgba(255,255,255,0) 42%)}
 .fab-nav::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.75) 50%,transparent 80%);transform:translateX(-130%);animation:fab-shine 2.8s ease-in-out infinite}
 @keyframes fab-shine{0%,45%{transform:translateX(-130%)}75%,100%{transform:translateX(130%)}}
 @media (max-width:600px){.fab-nav{right:12px;bottom:max(12px, env(safe-area-inset-bottom))}.fab-menu{right:12px;bottom:max(78px, calc(env(safe-area-inset-bottom) + 66px))}}

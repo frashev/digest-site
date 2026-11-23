@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Continue'
 Set-Location $PSScriptRoot
 function Log($msg) { Write-Output ("[{0}] {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $msg) }
 
@@ -17,8 +17,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # 3. без remote още няма какво да се качва
-git remote get-url origin 2>$null | Out-Null
-if ($LASTEXITCODE -ne 0) { Log "NO-REMOTE: repo not linked to GitHub yet"; exit 0 }
+# (git remote връща празно и код 0 при липса на remote — за разлика от
+# git remote get-url, който пише грешка и би прекъснал скрипта)
+$remotes = git remote 2>$null
+if (-not $remotes) { Log "NO-REMOTE: repo not linked to GitHub yet"; exit 0 }
 
 # 4. push иска валиден gh вход на този компютър
 gh auth status 2>$null | Out-Null

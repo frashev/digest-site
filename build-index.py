@@ -252,8 +252,10 @@ def podari_near_table(podari_json, today_iso, trips_url):
     for t in podari_json.get("trips_local", []):
         if t["date"] < today_iso:
             continue
+        local_only = t.get("local_only", True)
         rows.append({"date": t["date"], "place": t["place"],
-                     "dep": "местно · пред дома %s" % t["home"],
+                     "dep": ("местно · пред дома %s" % t["home"] if local_only
+                             else "пред дома %s" % t["home"]),
                      "places": t["places"], "url": trips_url})
     if not rows:
         return ""
@@ -1250,10 +1252,13 @@ def main():
                                          % (t["dep"], t["home"], t["point"]),
                                  "places": t["places"], "url": trips_url})
         for t in podari_json.get("trips_local", []):
+            local_only = t.get("local_only", True)
             podari_items.append({"kind": "local", "cat": "Местни групи", "date": t["date"],
                                  "place": t["place"],
-                                 "meta": "Среща пред дома: %s (местна група — без тръгване от София)"
-                                         % t["home"],
+                                 "meta": "Среща пред дома: %s (%s)"
+                                         % (t["home"], "местна група — без тръгване от София"
+                                            if local_only else
+                                            "без организирано тръгване от София"),
                                  "places": t["places"], "url": trips_url})
         for t in podari_json.get("trainings", []):
             podari_items.append({"kind": "training", "cat": "Обучения", "date": t["date"],

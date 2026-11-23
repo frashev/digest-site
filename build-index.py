@@ -219,6 +219,72 @@ def podari_places_badge(n):
     return '<span class="ev-free">Оставащи места: %d</span>' % n
 
 
+# Разстояния от София (минути с кола, км) — главното копие е CITY_GEO в
+# build-podari-vreme-html.py; петъчната проверка обновява и двете.
+PV_GEO = {
+    "Долна баня": (66, 79), "Звъничево": (83, 119), "Мездра": (84, 102),
+    "Самоков": (86, 60), "Пловдив": (92, 144), "Враца": (93, 111),
+    "Пещера": (98, 131), "Берковица": (98, 86), "Брацигово": (107, 134),
+    "Велинград": (108, 134), "Монтана": (124, 109), "Гаврил Геново": (129, 109),
+    "Карлово": (130, 138), "Плевен": (134, 164), "Хасково": (136, 227),
+    "Стара Загора": (140, 231), "Петрич": (145, 181),
+    "Велико Търново": (179, 220), "Стражица": (215, 255),
+}
+
+
+def fmt_drive(mins):
+    if mins >= 60:
+        return "%dч%02d" % (mins // 60, mins % 60)
+    return "%d мин" % mins
+
+
+def podari_near_table(podari_json, today_iso, trips_url):
+    """Таблица „Списък по близост до София": предстоящите посещения (от София
+    и местните групи), подредени по разстояние от София — най-близките първи.
+    Колони: дата, място, разстояние, час на тръгване, дейност, линк за записване."""
+    rows = []
+    for t in podari_json.get("trips_sofia", []):
+        if t["date"] < today_iso:
+            continue
+        rows.append({"date": t["date"], "place": t["place"],
+                     "dep": "%s · %s" % (t["dep"], t["point"]),
+                     "places": t["places"], "url": trips_url})
+    for t in podari_json.get("trips_local", []):
+        if t["date"] < today_iso:
+            continue
+        rows.append({"date": t["date"], "place": t["place"],
+                     "dep": "местно · пред дома %s" % t["home"],
+                     "places": t["places"], "url": trips_url})
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: (PV_GEO.get(r["place"], (0, 9999))[1],
+                             r["date"], r["place"]))
+    out = ['<section id="pv-near-sofia"><div class="container"><h2>Списък по близост до София</h2>'
+           '<p class="meta">Предстоящите посещения, подредени по разстояние от София — най-близките първи.</p>'
+           '<div class="pv-table-wrap"><table class="pv-table">'
+           '<tr><th>Дата</th><th>Място</th><th>Разстояние</th><th>Тръгване</th><th>Дейност</th><th></th></tr>']
+    for r in rows:
+        dt = datetime.strptime(r["date"], "%Y-%m-%d")
+        g = PV_GEO.get(r["place"])
+        dist = "%d км · ~%s" % (g[1], fmt_drive(g[0])) if g else "—"
+        if r["places"] == 0:
+            signup = '<span style="color:#B71C1C">Няма места</span>'
+        else:
+            signup = ('<a href="%s" target="_blank" rel="noopener">Запиши се →</a>'
+                      % esc(r["url"]))
+        out.append(
+            '<tr><td>%s, %s</td><td>%s</td><td>%s</td><td>%s</td><td>Посещение при децата</td><td>%s</td></tr>'
+            % (weekday_bg(dt)[:3], dt.strftime("%d.%m"), esc(r["place"]), dist,
+               esc(r["dep"]), signup)
+        )
+    out.append('</table></div>'
+               '<p class="meta">Точната програма за всяко посещение е на страницата за записване — след вход '
+               'в профила на podarivreme.org. „Местно“ означава, че групата е от града и няма '
+               'организирано тръгване от София.</p>'
+               '</div></section>')
+    return "".join(out)
+
+
 def podari_card_html(it):
     search = "%s %s %s" % (it["date"], it["place"], it["meta"])
     return (
@@ -687,6 +753,10 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .ev-free{display:inline-block;background:#E8F5E9;color:#2E7D32;font-size:12px;font-weight:700;padding:3px 10px;border-radius:var(--r-pill)}
 .ev-cat{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink-soft)}
 .podari-map{overflow-x:auto}
+.pv-table-wrap{overflow-x:auto}
+.pv-table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+.pv-table td,.pv-table th{padding:7px 8px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
+.pv-table th{color:#888;font-size:12px}
 @media (max-width:600px){.podari-map svg{min-width:640px}}
 .podari-note{font-size:13px;color:var(--muted)}
 .pv-big{font-family:var(--font-serif);font-size:36px;line-height:1.1;color:var(--accent);font-weight:700;margin:0 0 4px}
@@ -708,6 +778,8 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .fab-menu a{display:block;padding:11px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:15px}
 .fab-menu a:hover{background:var(--surface-2)}
 .fab-menu .fab-title{padding:8px 12px 4px;color:var(--muted);font-size:13px;font-weight:700}
+.tip{position:fixed;z-index:80;max-width:280px;background:#2B2620;color:#FBF9F3;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;display:none}
+.tip.show{display:block}
 .fab-menu a{border-left:3px solid transparent}
 .fab-menu a.c1{color:#B04545;border-left-color:#B04545}
 .fab-menu a.c2{color:#A66E1F;border-left-color:#A66E1F}
@@ -860,16 +932,33 @@ window.addEventListener('resize', fitIframes);
   var heads = document.querySelectorAll('main h2');
   if (heads.length < 2) { btn.style.display = 'none'; return; }
   var html = '<div class="fab-title">Раздели на тази страница</div>'
-    + '<a href="#top">⬆ Начало на страницата</a>';
-  var SEC_COLORS = {'podari-list':'c1','pv-nearest':'c2','pv-map':'c3','pv-mission':'c4','pv-join':'c5',
+    + '<a href="#top" data-tip="Връща те най-горе на страницата.">⬆ Начало на страницата</a>';
+  var SEC_COLORS = {'podari-list':'c1','pv-nearest':'c2','pv-near-sofia':'c5','pv-map':'c3','pv-mission':'c4','pv-join':'c5',
     'pv-academy':'c1','pv-work':'c2','pv-docs':'c3','pv-stories':'c4','pv-media':'c5',
     'pv-podcast':'c1','pv-support':'c2','pv-contacts':'c3'};
+  var TIPS = {'podari-list':'Предстоящи посещения при деца в домове — избери дата и се запиши.',
+    'pv-nearest':'Трите най-близки по време посещения — най-бързият път да се включиш.',
+    'pv-near-sofia':'Посещения, подредени по разстояние от София — най-близките първи, с час на тръгване и линк за записване.',
+    'pv-map':'Карта на България с всички места и разстоянията от София.',
+    'pv-mission':'Фондацията в числа — 16 години, 500 доброволци, 400 деца, 18 институции.',
+    'pv-join':'Пет стъпки до първото посещение и петте правила на доброволеца.',
+    'pv-academy':'Безплатни уроци за децата — Буквар, Диплома и Алма Матер, по 15 евро на час.',
+    'pv-work':'Шестдневна програма за младежи от домове — как се търси работа и се живее самостоятелно.',
+    'pv-docs':'Наръчник, декларации и документи за доброволци — за сваляне.',
+    'pv-stories':'Истории от блога на фондацията — какво се случва по посещенията.',
+    'pv-media':'Репортажи и статии за Подари Време в медиите.',
+    'pv-podcast':'Подкаст „Подарени истории" и бюлетин „Доброволчески вести".',
+    'pv-support':'Дари — 15 евро са 20 км път, 30 евро са урок за две деца, 50 евро са половината път до Враца за 15 доброволци.',
+    'pv-contacts':'Телефон, имейл и адрес на фондацията.'};
+  var TIPS_BY_TEXT = {'Днес накратко':'Времето днес, следващото събитие и следващото посещение на Подари Време.',
+    'Тази седмица':'Брой събития за всеки ден от седмицата — натисни деня, за да видиш събитията.'};
   heads.forEach(function(h, i){
     if (!h.id) h.id = 'sec-' + (i + 1);
     var t = (h.textContent || '').replace(/\\s+/g, ' ').trim();
     if (!t) return;
     var cls = SEC_COLORS[h.id] || (h.id.indexOf('day-') === 0 ? 'c3' : 'c' + ((i % 5) + 1));
-    html += '<a class="' + cls + '" href="#' + h.id + '">' + t + '</a>';
+    var tip = TIPS[h.id] || TIPS_BY_TEXT[t] || (h.id.indexOf('day-') === 0 ? (document.getElementById('podari-list') ? 'Всички посещения на тази дата — натисни, за да отидеш на деня.' : 'Всичко за този ден — натисни, за да отидеш на деня.') : '');
+    html += '<a class="' + cls + '" href="#' + h.id + '"' + (tip ? ' data-tip="' + tip + '"' : '') + '>' + t + '</a>';
   });
   menu.innerHTML = html;
   btn.addEventListener('click', function(e){
@@ -884,6 +973,49 @@ window.addEventListener('resize', fitIframes);
   });
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape') menu.classList.remove('open');
+  });
+})();
+// Popup обяснение при hover върху елементи с data-tip
+(function(){
+  var tip = document.getElementById('tip');
+  if (!tip) return;
+  var timer = null, current = null;
+  function show(el){
+    tip.textContent = el.getAttribute('data-tip');
+    tip.classList.add('show');
+    var r = el.getBoundingClientRect();
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    var top = r.top - h - 8;
+    if (top < 8) top = r.bottom + 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hide(){
+    tip.classList.remove('show');
+    current = null;
+    if (timer) { clearTimeout(timer); timer = null; }
+  }
+  document.addEventListener('mouseover', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (!el) { hide(); return; }
+    if (current === el) return;
+    current = el;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function(){ show(el); }, 200);
+  });
+  document.addEventListener('mouseout', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (el && (!e.relatedTarget || !el.contains(e.relatedTarget))) hide();
+  });
+  document.addEventListener('focusin', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (el) { current = el; show(el); }
+  });
+  document.addEventListener('focusout', function(){ hide(); });
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (el) hide();
   });
 })();
 """
@@ -1167,6 +1299,7 @@ def main():
             '</div></footer>\n'
             '<button id="fabNav" class="fab-nav" type="button" aria-label="Раздели на страницата" title="Раздели на страницата">↑</button>\n'
             '<nav id="fabMenu" class="fab-menu" aria-label="Раздели на страницата"></nav>\n'
+            '<div id="tip" class="tip" role="tooltip"></div>\n'
             '<script>' + JS + '</script>\n' + extra_js +
             '</body>\n</html>\n'
         )
@@ -1489,6 +1622,9 @@ def main():
             '<section id="pv-map"><div class="container">%s</div></section>'
             % read_file("podari-map.html")
         )
+    near_table_html = ""
+    if podari_json_ok:
+        near_table_html = podari_near_table(podari_json, today_iso, trips_url)
     podari_days = []
     for iso in sorted(podari_by_day):
         dt = datetime.strptime(iso, "%Y-%m-%d")
@@ -1527,14 +1663,14 @@ def main():
         '<p class="lede">%d предстоящи · данните се обновяват от сайта на фондацията. '
         'Показват се само предстоящи дати — миналите изобщо не се виждат.</p></div></div>'
         '<div class="container"><nav class="subnav" aria-label="Раздели на страницата">'
-        '<a class="c1" href="#podari-list">Посещения</a><a class="c2" href="#pv-nearest">Най-близки</a>'
-        '<a class="c3" href="#pv-map">Карта</a><a class="c4" href="#pv-mission">Мисията</a>'
-        '<a class="c5" href="#pv-join">Как се става доброволец</a><a class="c1" href="#pv-academy">Академията</a>'
-        '<a class="c2" href="#pv-work">Училище за работа</a><a class="c3" href="#pv-docs">Документи</a>'
-        '<a class="c4" href="#pv-stories">Истории</a><a class="c5" href="#pv-media">В медиите</a>'
-        '<a class="c1" href="#pv-podcast">Подкаст</a><a class="c2" href="#pv-support">Подкрепи</a>'
-        '<a class="c3" href="#pv-contacts">Контакти</a></nav></div>'
-        '%s%s'
+        '<a class="c1" href="#podari-list" data-tip="Предстоящи посещения при деца в домове — избери дата и се запиши.">Посещения</a><a class="c2" href="#pv-nearest" data-tip="Трите най-близки по време посещения — най-бързият път да се включиш.">Най-близки</a><a class="c5" href="#pv-near-sofia" data-tip="Посещения, подредени по разстояние от София — най-близките първи, с час на тръгване и линк за записване.">Близо до София</a>'
+        '<a class="c3" href="#pv-map" data-tip="Карта на България с всички места и разстоянията от София.">Карта</a><a class="c4" href="#pv-mission" data-tip="Фондацията в числа — 16 години, 500 доброволци, 400 деца, 18 институции.">Мисията</a>'
+        '<a class="c5" href="#pv-join" data-tip="Пет стъпки до първото посещение и петте правила на доброволеца.">Как се става доброволец</a><a class="c1" href="#pv-academy" data-tip="Безплатни уроци за децата — Буквар, Диплома и Алма Матер, по 15 евро на час.">Академията</a>'
+        '<a class="c2" href="#pv-work" data-tip="Шестдневна програма за младежи от домове — как се търси работа и се живее самостоятелно.">Училище за работа</a><a class="c3" href="#pv-docs" data-tip="Наръчник, декларации и документи за доброволци — за сваляне.">Документи</a>'
+        '<a class="c4" href="#pv-stories" data-tip="Истории от блога на фондацията — какво се случва по посещенията.">Истории</a><a class="c5" href="#pv-media" data-tip="Репортажи и статии за Подари Време в медиите.">В медиите</a>'
+        '<a class="c1" href="#pv-podcast" data-tip="Подкаст „Подарени истории" и бюлетин „Доброволчески вести".">Подкаст</a><a class="c2" href="#pv-support" data-tip="Дари — 15 евро са 20 км път, 30 евро са урок за две деца, 50 евро са половината път до Враца за 15 доброволци.">Подкрепи</a>'
+        '<a class="c3" href="#pv-contacts" data-tip="Телефон, имейл и адрес на фондацията.">Контакти</a></nav></div>'
+        '%s%s%s'
         '<div class="container"><div class="searchbar" role="search">'
         '<input id="podari-q" type="search" placeholder="Търси място…" aria-label="Търси място">'
         '<div class="chips" id="podariChips">'
@@ -1547,7 +1683,7 @@ def main():
         '</div></div>'
         '<div id="podari-list">%s</div>'
         '%s'
-        % (len(podari_items), nearest_html, podari_map_html, "".join(podari_days),
+        % (len(podari_items), nearest_html, near_table_html, podari_map_html, "".join(podari_days),
            podari_site_html)
     )
     sizes["podari.html"] = write_page(

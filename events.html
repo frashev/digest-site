@@ -180,6 +180,10 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .ev-free{display:inline-block;background:#E8F5E9;color:#2E7D32;font-size:12px;font-weight:700;padding:3px 10px;border-radius:var(--r-pill)}
 .ev-cat{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink-soft)}
 .podari-map{overflow-x:auto}
+.pv-table-wrap{overflow-x:auto}
+.pv-table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+.pv-table td,.pv-table th{padding:7px 8px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
+.pv-table th{color:#888;font-size:12px}
 @media (max-width:600px){.podari-map svg{min-width:640px}}
 .podari-note{font-size:13px;color:var(--muted)}
 .pv-big{font-family:var(--font-serif);font-size:36px;line-height:1.1;color:var(--accent);font-weight:700;margin:0 0 4px}
@@ -201,6 +205,8 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .fab-menu a{display:block;padding:11px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:15px}
 .fab-menu a:hover{background:var(--surface-2)}
 .fab-menu .fab-title{padding:8px 12px 4px;color:var(--muted);font-size:13px;font-weight:700}
+.tip{position:fixed;z-index:80;max-width:280px;background:#2B2620;color:#FBF9F3;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;display:none}
+.tip.show{display:block}
 .fab-menu a{border-left:3px solid transparent}
 .fab-menu a.c1{color:#B04545;border-left-color:#B04545}
 .fab-menu a.c2{color:#A66E1F;border-left-color:#A66E1F}
@@ -233,6 +239,7 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 <footer><div class="container"><div class="foot-nav"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html" aria-current="page">Събития</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html">RADAR</a><a href="cars.html">Коли</a><a href="aiplan.html">AI план</a><a href="search.html">🔍 Търсене</a></div><p>Последно обновяване: 23.11.2026 10:21 · Обновява се автоматично на всеки час.</p><p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p></div></footer>
 <button id="fabNav" class="fab-nav" type="button" aria-label="Раздели на страницата" title="Раздели на страницата">↑</button>
 <nav id="fabMenu" class="fab-menu" aria-label="Раздели на страницата"></nav>
+<div id="tip" class="tip" role="tooltip"></div>
 <script>
 // Менюто се скролва до активната страница (центрира я в лентата)
 (function(){
@@ -360,16 +367,33 @@ window.addEventListener('resize', fitIframes);
   var heads = document.querySelectorAll('main h2');
   if (heads.length < 2) { btn.style.display = 'none'; return; }
   var html = '<div class="fab-title">Раздели на тази страница</div>'
-    + '<a href="#top">⬆ Начало на страницата</a>';
-  var SEC_COLORS = {'podari-list':'c1','pv-nearest':'c2','pv-map':'c3','pv-mission':'c4','pv-join':'c5',
+    + '<a href="#top" data-tip="Връща те най-горе на страницата.">⬆ Начало на страницата</a>';
+  var SEC_COLORS = {'podari-list':'c1','pv-nearest':'c2','pv-near-sofia':'c5','pv-map':'c3','pv-mission':'c4','pv-join':'c5',
     'pv-academy':'c1','pv-work':'c2','pv-docs':'c3','pv-stories':'c4','pv-media':'c5',
     'pv-podcast':'c1','pv-support':'c2','pv-contacts':'c3'};
+  var TIPS = {'podari-list':'Предстоящи посещения при деца в домове — избери дата и се запиши.',
+    'pv-nearest':'Трите най-близки по време посещения — най-бързият път да се включиш.',
+    'pv-near-sofia':'Посещения, подредени по разстояние от София — най-близките първи, с час на тръгване и линк за записване.',
+    'pv-map':'Карта на България с всички места и разстоянията от София.',
+    'pv-mission':'Фондацията в числа — 16 години, 500 доброволци, 400 деца, 18 институции.',
+    'pv-join':'Пет стъпки до първото посещение и петте правила на доброволеца.',
+    'pv-academy':'Безплатни уроци за децата — Буквар, Диплома и Алма Матер, по 15 евро на час.',
+    'pv-work':'Шестдневна програма за младежи от домове — как се търси работа и се живее самостоятелно.',
+    'pv-docs':'Наръчник, декларации и документи за доброволци — за сваляне.',
+    'pv-stories':'Истории от блога на фондацията — какво се случва по посещенията.',
+    'pv-media':'Репортажи и статии за Подари Време в медиите.',
+    'pv-podcast':'Подкаст „Подарени истории" и бюлетин „Доброволчески вести".',
+    'pv-support':'Дари — 15 евро са 20 км път, 30 евро са урок за две деца, 50 евро са половината път до Враца за 15 доброволци.',
+    'pv-contacts':'Телефон, имейл и адрес на фондацията.'};
+  var TIPS_BY_TEXT = {'Днес накратко':'Времето днес, следващото събитие и следващото посещение на Подари Време.',
+    'Тази седмица':'Брой събития за всеки ден от седмицата — натисни деня, за да видиш събитията.'};
   heads.forEach(function(h, i){
     if (!h.id) h.id = 'sec-' + (i + 1);
     var t = (h.textContent || '').replace(/\s+/g, ' ').trim();
     if (!t) return;
     var cls = SEC_COLORS[h.id] || (h.id.indexOf('day-') === 0 ? 'c3' : 'c' + ((i % 5) + 1));
-    html += '<a class="' + cls + '" href="#' + h.id + '">' + t + '</a>';
+    var tip = TIPS[h.id] || TIPS_BY_TEXT[t] || (h.id.indexOf('day-') === 0 ? (document.getElementById('podari-list') ? 'Всички посещения на тази дата — натисни, за да отидеш на деня.' : 'Всичко за този ден — натисни, за да отидеш на деня.') : '');
+    html += '<a class="' + cls + '" href="#' + h.id + '"' + (tip ? ' data-tip="' + tip + '"' : '') + '>' + t + '</a>';
   });
   menu.innerHTML = html;
   btn.addEventListener('click', function(e){
@@ -384,6 +408,49 @@ window.addEventListener('resize', fitIframes);
   });
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape') menu.classList.remove('open');
+  });
+})();
+// Popup обяснение при hover върху елементи с data-tip
+(function(){
+  var tip = document.getElementById('tip');
+  if (!tip) return;
+  var timer = null, current = null;
+  function show(el){
+    tip.textContent = el.getAttribute('data-tip');
+    tip.classList.add('show');
+    var r = el.getBoundingClientRect();
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    var top = r.top - h - 8;
+    if (top < 8) top = r.bottom + 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hide(){
+    tip.classList.remove('show');
+    current = null;
+    if (timer) { clearTimeout(timer); timer = null; }
+  }
+  document.addEventListener('mouseover', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (!el) { hide(); return; }
+    if (current === el) return;
+    current = el;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function(){ show(el); }, 200);
+  });
+  document.addEventListener('mouseout', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (el && (!e.relatedTarget || !el.contains(e.relatedTarget))) hide();
+  });
+  document.addEventListener('focusin', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (el) { current = el; show(el); }
+  });
+  document.addEventListener('focusout', function(){ hide(); });
+  document.addEventListener('click', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (el) hide();
   });
 })();
 </script>

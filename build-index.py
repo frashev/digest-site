@@ -24,7 +24,7 @@ import os
 import re
 import sys
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta
 
 SITE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_URL = "https://frashev.github.io/digest-site/"
@@ -349,13 +349,26 @@ a{color:var(--accent);font-weight:600}
 .nav{border-top:1px solid var(--border)}
 .nav-inner{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 16px 10px;max-width:1240px;margin:0 auto;-webkit-overflow-scrolling:touch}
 .nav-inner::-webkit-scrollbar{display:none}
-.nav a{flex:none;padding:8px 14px;border-radius:var(--r-pill);color:var(--muted);text-decoration:none;font-size:15px;font-weight:500;min-height:36px;display:inline-flex;align-items:center}
+.nav a{flex:none;padding:12px 14px;border-radius:var(--r-pill);color:var(--muted);text-decoration:none;font-size:15px;font-weight:500;min-height:44px;display:inline-flex;align-items:center}
 .nav a[aria-current="page"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
 .page-hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
 .page-hero .kicker{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .page-hero h1{font-size:clamp(26px,5vw,34px);line-height:1.15;margin:8px 0 6px;letter-spacing:-.01em}
 .page-hero p.lede{color:var(--muted);margin:6px 0 0}
-.hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
+.hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px;display:flex;gap:24px;align-items:center}
+.hero-text{flex:1;min-width:0}
+.hero-art{flex:0 0 240px}
+.hero-art svg{width:100%;height:auto;display:block}
+@media (max-width:700px){.hero{flex-direction:column;align-items:stretch}.hero-art{flex-basis:auto;width:100%;max-width:300px;margin:0 auto}}
+.glance-big{font-size:26px;font-weight:700;line-height:1.2;margin:2px 0 6px}
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.week-day{display:block;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 2px;text-decoration:none;color:var(--text)}
+.week-day:hover{border-color:var(--accent)}
+.week-day.today{border-color:var(--accent);background:var(--accent-soft)}
+.week-day .wd{display:block;font-size:12px;color:var(--muted)}
+.week-day .wn{display:block;font-size:18px;font-weight:700;line-height:1.3}
+.week-day .wc{display:block;font-size:11px;color:var(--muted)}
+@media (max-width:600px){.week-day .wc{font-size:10px}}
 .hero .kicker{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .hero h1{font-size:clamp(28px,6vw,40px);line-height:1.1;margin:8px 0 6px;letter-spacing:-.01em}
 .hero h1 em{font-style:italic}
@@ -471,6 +484,8 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .ev-links{margin:8px 0 0;font-size:14px;display:flex;gap:16px;flex-wrap:wrap}
 .ev-free{display:inline-block;background:#E8F5E9;color:#2E7D32;font-size:12px;font-weight:700;padding:3px 10px;border-radius:var(--r-pill)}
 .ev-cat{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink-soft)}
+.podari-map{overflow-x:auto}
+@media (max-width:600px){.podari-map svg{min-width:640px}}
 .podari-note{font-size:13px;color:var(--muted)}
 .sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:3px;vertical-align:-1px}
 .dist{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0}
@@ -891,10 +906,21 @@ def main():
         latest = news[-1]
         latest_text = texts[latest["name"]]
         hero_html = (
-            '<div class="container" id="top"><div class="hero"><p class="kicker">Най-новото</p>'
+            '<div class="container" id="top"><div class="hero"><div class="hero-text">'
+            '<p class="kicker">Най-новото</p>'
             '<h1>Новини <span class="hl">%s, %s</span> — <em>%s</em></h1>'
             '<p class="lede">%d новини · %s</p><ul>%s</ul>'
-            '<a class="btn-primary" href="news.html">Чети новините ↓</a></div></div>'
+            '<a class="btn-primary" href="news.html">Чети новините ↓</a></div>'
+            '<div class="hero-art" aria-hidden="true">'
+            '<svg viewBox="0 0 320 180" role="img" aria-label="Витоша със слънце">'
+            '<circle cx="252" cy="42" r="20" fill="#9C493D"/>'
+            '<path d="M40 52 q6 -6 12 0 q6 -6 12 0" stroke="#6B5F4D" fill="none" stroke-width="2" stroke-linecap="round"/>'
+            '<path d="M84 38 q5 -5 10 0 q5 -5 10 0" stroke="#6B5F4D" fill="none" stroke-width="2" stroke-linecap="round"/>'
+            '<polygon points="0,180 60,90 120,140 180,70 240,130 320,80 320,180" fill="#6B5F4D"/>'
+            '<polygon points="0,180 40,120 100,160 160,100 220,150 280,110 320,150 320,180" fill="#2B2620"/>'
+            '<rect x="158" y="70" width="4" height="32" fill="#2B2620"/>'
+            '<rect x="151" y="70" width="18" height="3" fill="#2B2620"/>'
+            '</svg></div></div></div>'
             % (fmt_date(latest["date"]), weekday_bg(latest["date"]),
                PART_LABEL[latest["part"]],
                count_articles(latest_text), PART_EMOJI[latest["part"]],
@@ -919,6 +945,93 @@ def main():
             % (len(upcoming), free_count,
                fmt_date(datetime.strptime(last_iso, "%Y-%m-%d")))
         )
+
+    # „Днес накратко" — време, следващо събитие, следващо посещение на Подари Време
+    glance_cards = []
+    wx_path = os.path.join(SITE_DIR, "weather.html")
+    if os.path.exists(wx_path):
+        wx_html = read_file("weather.html")
+        m = re.search(r'<section class="wx-day">.*?<span class="wx-dow">(.*?)</span>'
+                      r'.*?<div class="wx-sum">(.*?)</div>', wx_html, re.S)
+        if m:
+            cond = m.group(1).split("·")[-1].strip()
+            mm = re.search(r"([+-]?\d+)° / ([+-]?\d+)°", m.group(2))
+            big = "%s° / %s°" % (mm.group(1), mm.group(2)) if mm else "—"
+            parts = [p.strip() for p in m.group(2).split("·")]
+            parts = [p for p in parts if not re.search(r"[+-]?\d+° /", p)]
+            meta = " · ".join(parts)
+            glance_cards.append(
+                '<article class="card"><span class="icon">🌤️</span><h3>Времето днес</h3>'
+                '<p class="glance-big">%s</p><p class="meta">%s</p>'
+                '<a class="btn-ghost" href="vreme.html">Времето →</a></article>'
+                % (esc(big), esc(meta))
+            )
+    now_hm = now.strftime("%H:%M")
+    future = [e for e in upcoming
+              if (e.get("date"), e.get("start") or "99:99") >= (today_iso, now_hm)]
+    next_ev = future[0] if future else None
+    if next_ev:
+        ev_dt = datetime.strptime(next_ev["date"], "%Y-%m-%d")
+        if next_ev["date"] == today_iso:
+            when = "днес, %s" % (next_ev.get("start") or "")
+        else:
+            when = "%s, %s, %s" % (weekday_bg(ev_dt).capitalize(),
+                                   ev_dt.strftime("%d.%m"),
+                                   next_ev.get("start") or "")
+        venue = (next_ev.get("venue") or "").strip()
+        glance_cards.append(
+            '<article class="card"><span class="icon">🎟️</span><h3>Следващо събитие</h3>'
+            '<p class="glance-big">%s</p><p class="meta">%s%s</p>'
+            '<a class="btn-ghost" href="events.html">Събития →</a></article>'
+            % (esc(when), esc(next_ev["name"]),
+               (" · " + esc(venue)) if venue else "")
+        )
+    if podari_items:
+        nxt = podari_items[0]
+        pdt = datetime.strptime(nxt["date"], "%Y-%m-%d")
+        pwhen = ("%s, %s" % (weekday_bg(pdt).capitalize(), pdt.strftime("%d.%m")))
+        if nxt["places"] is None:
+            places_txt = "Онлайн"
+        elif nxt["places"] == 0:
+            places_txt = "Няма места"
+        elif nxt["places"] <= 3:
+            places_txt = "Оставащи места: %d — малко" % nxt["places"]
+        else:
+            places_txt = "Оставащи места: %d" % nxt["places"]
+        glance_cards.append(
+            '<article class="card"><span class="icon">❤️</span><h3>Подари Време</h3>'
+            '<p class="glance-big">%s</p><p class="meta">%s · %s</p>'
+            '<a class="btn-ghost" href="podari.html">Подари Време →</a></article>'
+            % (esc(nxt["place"]), esc(pwhen), esc(places_txt))
+        )
+    glance_html = ""
+    if glance_cards:
+        glance_html = (
+            '<section aria-labelledby="glance-h"><div class="container">'
+            '<h2 id="glance-h">Днес накратко</h2>'
+            '<div class="grid">%s</div></div></section>' % "".join(glance_cards)
+        )
+
+    # „Тази седмица" — брой събития по дни, с линк към деня в страницата Събития
+    week_cells = []
+    for i in range(7):
+        d = now.date() + timedelta(days=i)
+        iso = d.strftime("%Y-%m-%d")
+        n = sum(1 for e in upcoming if e.get("date") == iso)
+        cnt = "—" if n == 0 else ("1 събитие" if n == 1 else "%d събития" % n)
+        cls = "week-day today" if i == 0 else "week-day"
+        week_cells.append(
+            '<a class="%s" href="events.html#day-%s">'
+            '<span class="wd">%s</span><span class="wn">%d</span>'
+            '<span class="wc">%s</span></a>'
+            % (cls, iso, ["пон", "вт", "ср", "чт", "пт", "сб", "нд"][d.weekday()],
+               d.day, cnt)
+        )
+    week_html = (
+        '<section aria-labelledby="week-h"><div class="container">'
+        '<h2 id="week-h">Тази седмица</h2>'
+        '<div class="week-strip">%s</div></div></section>' % "".join(week_cells)
+    )
 
     # решетка с разделите
     grid_cards = []
@@ -952,6 +1065,8 @@ def main():
 
     home_body = (
         hero_html
+        + glance_html
+        + week_html
         + '<section aria-labelledby="today-h"><div class="container">'
           '<div class="section-head"><h2 id="today-h">Днес</h2>'
           '<a href="news.html">Всички новини →</a></div>'

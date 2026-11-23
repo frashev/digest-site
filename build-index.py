@@ -346,6 +346,7 @@ a{color:var(--accent);font-weight:600}
 .brand img{width:32px;height:32px;flex:none}
 .brand-name{font-family:var(--font-serif);font-size:20px;font-weight:600;white-space:nowrap}
 .brand-date{color:var(--muted);font-size:13px;white-space:nowrap}
+@media (max-width:600px){.brand-date{display:none}}
 .nav{border-top:1px solid var(--border)}
 .nav-inner{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 16px 10px;max-width:1240px;margin:0 auto;-webkit-overflow-scrolling:touch}
 .nav-inner::-webkit-scrollbar{display:none}
@@ -470,7 +471,7 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .news-item .links{margin:8px 0 0;font-size:14px}
 .news-chip{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--r-pill);border:1.5px solid}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
-.fchip{padding:8px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;font-family:var(--font-sans);color:var(--ink)}
+.fchip{padding:11px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;font-family:var(--font-sans);color:var(--ink)}
 .fchip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .ev-day{margin:0 0 6px}
 .ev-day h2{font-size:clamp(22px,3vw,26px)}

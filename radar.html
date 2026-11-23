@@ -168,7 +168,7 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .fchip{padding:11px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;touch-action:manipulation;font-family:var(--font-sans);color:var(--ink)}
 .fchip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 /* Меню с филтри (Събития + Новини): търсене + чипове, сгъва се на телефон */
-.toolbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:12px 14px;margin:12px 0 4px;position:sticky;top:110px;z-index:40}
+.toolbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:12px 14px;max-width:1240px;width:calc(100% - 32px);margin:12px auto 4px;position:sticky;top:120px;z-index:40}
 .toolbar input{width:100%;padding:12px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font-size:16px;font-family:var(--font-sans);background:var(--surface);color:var(--ink)}
 .toolbar .label{font-size:13px;font-weight:700;color:var(--muted);margin:12px 4px 2px;display:block}
 .toolbar .chips{margin:4px 0}
@@ -177,7 +177,6 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .toolbar .filter-toggle{font-weight:700;width:100%;text-align:left;margin-bottom:8px}
 .toolbar.closed .label,.toolbar.closed .chips,.toolbar.closed .btn:not(.filter-toggle){display:none}
 .toolbar.closed .filter-toggle{margin-bottom:0}
-@media (max-width:900px){.toolbar{top:104px}}
 .ev-day{margin:0 0 6px}
 .ev-day h2{font-size:clamp(22px,3vw,26px)}
 .ev-day .count{color:var(--muted);font-size:15px;font-weight:400;font-family:var(--font-sans)}

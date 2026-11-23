@@ -758,7 +758,7 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .fchip{padding:11px 14px;border-radius:var(--r-pill);border:1px solid var(--border-strong);background:var(--surface);font-size:14px;cursor:pointer;touch-action:manipulation;font-family:var(--font-sans);color:var(--ink)}
 .fchip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 /* Меню с филтри (Събития + Новини): търсене + чипове, сгъва се на телефон */
-.toolbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:12px 14px;margin:12px 0 4px;position:sticky;top:110px;z-index:40}
+.toolbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:12px 14px;max-width:1240px;width:calc(100% - 32px);margin:12px auto 4px;position:sticky;top:120px;z-index:40}
 .toolbar input{width:100%;padding:12px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font-size:16px;font-family:var(--font-sans);background:var(--surface);color:var(--ink)}
 .toolbar .label{font-size:13px;font-weight:700;color:var(--muted);margin:12px 4px 2px;display:block}
 .toolbar .chips{margin:4px 0}
@@ -767,7 +767,6 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .toolbar .filter-toggle{font-weight:700;width:100%;text-align:left;margin-bottom:8px}
 .toolbar.closed .label,.toolbar.closed .chips,.toolbar.closed .btn:not(.filter-toggle){display:none}
 .toolbar.closed .filter-toggle{margin-bottom:0}
-@media (max-width:900px){.toolbar{top:104px}}
 .ev-day{margin:0 0 6px}
 .ev-day h2{font-size:clamp(22px,3vw,26px)}
 .ev-day .count{color:var(--muted);font-size:15px;font-weight:400;font-family:var(--font-sans)}
@@ -1736,7 +1735,7 @@ def main():
             '<div class="container" id="top"><div class="page-hero">'
             '<p class="kicker">Новини</p><h1>Новини — сутрин, следобед и вечер</h1>'
             '<p class="lede">%d новини от последните 3 дни · чети направо тук, '
-            'без да отваряш отделни файлове.</p></div>'
+            'без да отваряш отделни файлове.</p></div></div>'
             '<div class="toolbar" id="newsFilters" role="search">'
             '<button class="btn filter-toggle" id="newsFilterToggle">☰ Филтри</button>'
             '<input id="q" type="search" placeholder="Търси в новините…" aria-label="Търси в новините">'
@@ -1752,7 +1751,7 @@ def main():
             '<button class="btn" id="newsToday">📅 Днес</button>'
             '<p class="count-line" id="count" aria-live="polite"></p>'
             '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
-            '</div></div>'
+            '</div>'
             '%s'
             % (len(articles), news_day_chips, "".join(day_sections))
         )
@@ -1794,7 +1793,7 @@ def main():
             '<div class="container" id="top"><div class="page-hero">'
             '<p class="kicker">Събития</p><h1>Събития — от днес нататък</h1>'
             '<p class="lede">%d събития · 🆓 %d безплатни · 🆕 %d нови · всички събрани събития, '
-            'подредени по дни. Старите не се показват.</p></div>'
+            'подредени по дни. Старите не се показват.</p></div></div>'
             '<div class="toolbar" id="evFilters" role="search">'
             '<button class="btn filter-toggle" id="evFilterToggle">☰ Филтри</button>'
             '<input id="q" type="search" placeholder="Търси в събитията…" aria-label="Търси в събитията">'
@@ -1819,7 +1818,7 @@ def main():
             '<button class="fchip" id="evTimeBtn">⏰ само с посочен час</button></div>'
             '<p class="count-line" id="count" aria-live="polite"></p>'
             '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
-            '</div></div>'
+            '</div>'
             '%s'
             % (len(upcoming), free_count, new_count, ev_day_chips, ev_cat_chips,
                ev_src_chips, "".join(ev_sections))

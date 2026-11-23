@@ -145,7 +145,7 @@ def main():
             links = []
             for name in sorted(days[d]):
                 part = part_label(name)
-                links.append('<a href="%s">%s</a>' % (name, part or name))
+                links.append('<a href="%s">%s</a>' % (name, part or "обзор"))
             out.append('<div class="row"><span class="date">%s</span><span class="sep">—</span>%s</div>'
                        % (label, " <span class='sep'>|</span> ".join(links)))
         out.append("</section>")

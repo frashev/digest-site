@@ -232,6 +232,208 @@ def podari_card_html(it):
     )
 
 
+def podari_site_sections(site):
+    """Нови секции за страницата Подари Време — цялото съдържание на сайта на
+    фондацията от podari-site.json (карта на сайта: podari-site-map.md):
+    мисия в числа, как се става доброволец, Академия, Училище за работа,
+    документи, блог, медии, подкаст, дарения, контакти."""
+    if not site:
+        return ""
+    parts = []
+    m = site.get("mission", {})
+    if m:
+        parts.append(
+            '<section><div class="container"><h2>Мисията в числа</h2>'
+            '<p class="meta">„%s“</p><div class="grid">'
+            '<article class="card"><p class="pv-big">%d</p><p class="meta">години с децата</p></article>'
+            '<article class="card"><p class="pv-big">%d</p><p class="meta">активно ангажирани доброволци</p></article>'
+            '<article class="card"><p class="pv-big">%d</p><p class="meta">деца, подкрепяни дългосрочно</p></article>'
+            '<article class="card"><p class="pv-big">%d</p><p class="meta">институции в страната</p></article>'
+            '</div><p class="meta">Над %d подарени дни всяка година. %s</p></div></section>'
+            % (esc(m.get("quote", "")), m.get("years", 0), m.get("volunteers", 0),
+               m.get("children", 0), m.get("institutions", 0),
+               m.get("days_per_year", 0), esc(m.get("license", "")))
+        )
+    steps = site.get("how_to_join", [])
+    rules = site.get("guide_rules", [])
+    if steps:
+        cards = "".join(
+            '<article class="card"><span class="pv-step-n">%d</span><h3>%s</h3>'
+            '<p class="meta">%s</p><p><a href="%s" target="_blank" rel="noopener">Отвори →</a></p></article>'
+            % (i + 1, esc(s.get("title", "")), esc(s.get("text", "")),
+               esc(s.get("url", "")))
+            for i, s in enumerate(steps)
+        )
+        rules_html = ""
+        if rules:
+            rules_html = (
+                '<h3>Петте правила на доброволеца</h3><ul class="pv-links">%s</ul>'
+                '<p class="meta"><a href="%s" target="_blank" rel="noopener">'
+                'Наръчникът — Първи стъпки →</a></p>'
+                % ("".join("<li>♦ %s</li>" % esc(r) for r in rules),
+                   esc(site.get("guide_url", "")))
+            )
+        parts.append(
+            '<section><div class="container"><h2>Как се става доброволец</h2>'
+            '<div class="grid">%s</div>%s</div></section>' % (cards, rules_html)
+        )
+    ac = site.get("academy", {})
+    if ac:
+        stages = "".join(
+            '<article class="card"><p class="meta">%s · %s</p><h3>%s — %s</h3>'
+            '<p class="meta">%s</p><p class="meta">Предмети: %s</p>'
+            '<p class="meta">Формат: %s</p></article>'
+            % (esc(s.get("stage", "")), esc(s.get("classes", "")),
+               esc(s.get("name", "")), esc(s.get("title", "")),
+               esc(s.get("text", "")), esc(s.get("subjects", "")),
+               esc(s.get("format", "")))
+            for s in ac.get("stages", [])
+        )
+        price = "".join(
+            '<p class="meta"><b>%s</b> — %s</p>'
+            % (esc(p.get("amount", "")), esc(p.get("text", "")))
+            for p in ac.get("pricing", [])
+        )
+        parts.append(
+            '<section><div class="container"><h2>Академията</h2>'
+            '<p class="meta">%s</p><div class="grid">%s</div>%s'
+            '<p class="meta">%s</p>'
+            '<p><a href="%s" target="_blank" rel="noopener">Академията на podarivreme.org →</a></p>'
+            '</div></section>'
+            % (esc(ac.get("intro", "")), stages, price,
+               esc(ac.get("teacher_call", "")), esc(ac.get("url", "")))
+        )
+    ws = site.get("work_school", {})
+    if ws:
+        parts.append(
+            '<section><div class="container"><h2>%s</h2><article class="card">'
+            '<p class="meta">%s</p><p class="meta">%s · %d младежи от цялата страна · '
+            'база: %s</p><p class="meta">Екипи: %s.</p><p class="meta">%s</p>'
+            '<p class="meta">%s</p>'
+            '<p><a href="%s" target="_blank" rel="noopener">Училище за работа →</a></p>'
+            '</article></div></section>'
+            % (esc(ws.get("title", "")), esc(ws.get("desc", "")),
+               esc(ws.get("dates", "")), ws.get("youths", 0), esc(ws.get("base", "")),
+               esc(", ".join(ws.get("teams", []))), esc(ws.get("mentor", "")),
+               esc(ws.get("note", "")), esc(ws.get("url", "")))
+        )
+    docs = site.get("documents", [])
+    if docs:
+        items = "".join(
+            '<li><a href="%s" target="_blank" rel="noopener">%s</a></li>'
+            % (esc(d.get("url", "")), esc(d.get("title", "")))
+            for d in docs
+        )
+        parts.append(
+            '<section><div class="container"><h2>Документи</h2>'
+            '<ul class="pv-links">%s</ul>'
+            '<p class="meta"><a href="%s" target="_blank" rel="noopener">'
+            'Всички документи на сайта на фондацията →</a></p></div></section>'
+            % (items, esc(site.get("documents_url", "")))
+        )
+    stories = site.get("stories", [])
+    if stories:
+        items = "".join(
+            '<li><a href="%s" target="_blank" rel="noopener">%s</a>'
+            '<span class="pv-date">%s</span></li>'
+            % (esc(s.get("url", "")), esc(s.get("title", "")),
+               esc(s.get("date", "")))
+            for s in stories
+        )
+        parts.append(
+            '<section><div class="container"><h2>Истории от блога</h2>'
+            '<ul class="pv-links">%s</ul>'
+            '<p class="meta"><a href="%s" target="_blank" rel="noopener">'
+            'Блогът на фондацията →</a></p></div></section>'
+            % (items, esc(site.get("stories_url", "")))
+        )
+    media = site.get("media", [])
+    if media:
+        items = "".join(
+            '<li><a href="%s" target="_blank" rel="noopener">%s</a>'
+            '<span class="pv-date">%s · %s</span></li>'
+            % (esc(x.get("url", "")), esc(x.get("title", "")),
+               esc(x.get("outlet", "")), esc(x.get("date", "")))
+            for x in media
+        )
+        parts.append(
+            '<section><div class="container"><h2>В медиите</h2>'
+            '<ul class="pv-links">%s</ul>'
+            '<p class="meta"><a href="%s" target="_blank" rel="noopener">'
+            'Всички медийни участия →</a></p></div></section>'
+            % (items, esc(site.get("media_url", "")))
+        )
+    pc = site.get("podcast", {})
+    nl = site.get("newsletter", {})
+    if pc or nl:
+        pc_links = ""
+        if pc:
+            pc_links = " · ".join(
+                '<a href="%s" target="_blank" rel="noopener">%s</a>'
+                % (esc(u), esc(name))
+                for name, u in pc.get("links", {}).items()
+            )
+            pc_links = ('<h3>%s</h3><p class="meta">%s</p><p>%s</p>'
+                        '<p><a href="%s" target="_blank" rel="noopener">'
+                        'Подкастът →</a></p>'
+                        % (esc(pc.get("title", "")), esc(pc.get("desc", "")),
+                           pc_links, esc(pc.get("url", ""))))
+        nl_html = ""
+        if nl:
+            nl_html = ('<h3>%s</h3><p class="meta">%s</p>'
+                       '<p><a href="%s" target="_blank" rel="noopener">'
+                       'Абонирай се →</a></p>'
+                       % (esc(nl.get("title", "")), esc(nl.get("desc", "")),
+                          esc(nl.get("url", ""))))
+        parts.append(
+            '<section><div class="container"><h2>Подкаст и бюлетин</h2>'
+            '<article class="card">%s%s</article></div></section>'
+            % (pc_links, nl_html)
+        )
+    sup = site.get("support", {})
+    if sup:
+        st = sup.get("stats", {})
+        amounts = "".join(
+            '<span class="pv-amount"><b>%s</b><br>%s</span>'
+            % (esc(a.get("amount", "")), esc(a.get("effect", "")))
+            for a in sup.get("amounts", [])
+        )
+        bank = sup.get("bank", {})
+        parts.append(
+            '<section><div class="container"><h2>Подкрепи</h2><article class="card">'
+            '<p class="meta">Изпълнени добрини до момента: +%d картички · +%d мисии · '
+            '+%d продукта.</p><div class="pv-donate">%s</div>'
+            '<p class="meta">С банков превод: IBAN %s · BIC %s · %s · титуляр: %s</p>'
+            '<p><a href="%s" target="_blank" rel="noopener">Дари на podarivreme.org →</a></p>'
+            '</article></div></section>'
+            % (st.get("cards", 0), st.get("missions", 0), st.get("products", 0),
+               amounts, esc(bank.get("iban", "")), esc(bank.get("bic", "")),
+               esc(bank.get("bank", "")), esc(bank.get("holder", "")),
+               esc(sup.get("url", "")))
+        )
+    ct = site.get("contacts", {})
+    if ct:
+        parts.append(
+            '<section><div class="container"><article class="card"><h3>Контакти</h3>'
+            '<p class="meta">%s · <a href="mailto:%s">%s</a> · %s · %s · '
+            '<a href="%s" target="_blank" rel="noopener">podarivreme.org</a></p>'
+            '<p class="meta">Въпроси към фондацията: <a href="mailto:%s">%s</a></p>'
+            '<p class="podari-note">Данните за посещенията се обновяват всеки петък от '
+            'сайта на фондацията и писмата ѝ. Директна жива проверка от браузъра не е '
+            'възможна — сайтът на фондацията не позволява заявки от други страници '
+            '(CORS). Съдържанието на тази страница е от сайта на фондацията, '
+            'прегледано на %s.</p>'
+            '</article></div></section>'
+            % (esc(ct.get("address", "")), esc(ct.get("email", "")),
+               esc(ct.get("email", "")), esc(ct.get("phone", "")),
+               esc(ct.get("coordinator", "")), esc(ct.get("url", "")),
+               esc(ct.get("questions_email", "")),
+               esc(ct.get("questions_email", "")),
+               esc(site.get("updated", "")))
+        )
+    return "".join(parts)
+
+
 def event_card_html(e):
     name = e.get("name") or ""
     start = e.get("start") or ""
@@ -488,6 +690,15 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .podari-map{overflow-x:auto}
 @media (max-width:600px){.podari-map svg{min-width:640px}}
 .podari-note{font-size:13px;color:var(--muted)}
+.pv-big{font-family:var(--font-serif);font-size:36px;line-height:1.1;color:var(--accent);font-weight:700;margin:0 0 4px}
+.pv-step-n{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:16px;margin-bottom:6px}
+.pv-links{list-style:none;margin:0;padding:0}
+.pv-links li{padding:7px 0;border-bottom:1px solid var(--border)}
+.pv-links li:last-child{border-bottom:0}
+.pv-links .pv-date{color:var(--muted);font-size:13px;margin-left:6px;white-space:nowrap}
+.pv-amount{border:1px solid var(--border-strong);border-radius:var(--r-md);padding:10px 14px;background:var(--surface-2)}
+.pv-amount b{font-size:18px;color:var(--accent)}
+.pv-donate{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
 .sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:3px;vertical-align:-1px}
 .dist{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0}
 .dist td,.dist th{padding:4px 6px;border-bottom:1px solid var(--border);text-align:left}
@@ -854,6 +1065,11 @@ def main():
                                  "places": None, "url": brief_url})
         podari_items = [it for it in podari_items if it["date"] >= today_iso]
         podari_items.sort(key=lambda it: (it["date"], it["place"]))
+    podari_site = {}
+    ps_path = os.path.join(SITE_DIR, "podari-site.json")
+    if os.path.exists(ps_path):
+        with open(ps_path, encoding="utf-8") as f:
+            podari_site = json.load(f)
 
     def nav_html(active):
         out = []
@@ -1222,6 +1438,28 @@ def main():
             % (iso, weekday_bg(dt).capitalize(), dt.strftime("%d.%m"),
                podari_day_badge(iso, now.date()), cards)
         )
+    podari_site_html = podari_site_sections(podari_site)
+    if not podari_site_html:
+        podari_site_html = (
+            '<section><div class="container">'
+            '<article class="card"><h3>Как се записваш за посещение</h3>'
+            '<p class="meta">1) Влез в профила си на podarivreme.org. 2) Отвори „Посещения“ и избери '
+            'локация и дата. 3) Запиши се — местата са ограничени и се виждат в реално време. '
+            '4) За тръгване от София: паркингът пред БНБ, в часа за тръгване от графика; '
+            'местните групи се срещат направо пред дома. 5) Ако си нов и още не си минал '
+            'обучение — първо обучение (всеки четвъртък, 18:00, онлайн).</p>'
+            '<h3>Мисията</h3>'
+            '<p class="meta">„Всяко дете да има до себе си значим възрастен“ — ментор, приятел и пример, '
+            'който вярва в него и го подкрепя дългосрочно.</p>'
+            '<h3>Контакти</h3>'
+            '<p class="meta">бул. „Цариградско шосе“ 40, Европарк, София · hello@podarivreme.org · '
+            'Анастасия Цонева, +359 88 339 7755 · <a href="https://www.podarivreme.org" '
+            'target="_blank" rel="noopener">podarivreme.org</a></p>'
+            '<p class="podari-note">Данните за посещенията се обновяват всеки петък от сайта на фондацията '
+            'и писмата ѝ. Директна жива проверка от браузъра не е възможна — сайтът на '
+            'фондацията не позволява заявки от други страници (CORS).</p>'
+            '</article></div></section>'
+        )
     podari_body = (
         '<div class="container" id="top"><div class="page-hero">'
         '<p class="kicker">Доброволчество</p><h1>Подари Време — предстоящи посещения</h1>'
@@ -1239,25 +1477,9 @@ def main():
         '<p class="count-line" id="podari-count" aria-live="polite"></p>'
         '</div></div>'
         '<div id="podari-list">%s</div>'
-        '<section><div class="container">'
-        '<article class="card"><h3>Как се записваш за посещение</h3>'
-        '<p class="meta">1) Влез в профила си на podarivreme.org. 2) Отвори „Посещения“ и избери '
-        'локация и дата. 3) Запиши се — местата са ограничени и се виждат в реално време. '
-        '4) За тръгване от София: паркингът пред БНБ, в часа за тръгване от графика; '
-        'местните групи се срещат направо пред дома. 5) Ако си нов и още не си минал '
-        'обучение — първо обучение (всеки четвъртък, 18:00, онлайн).</p>'
-        '<h3>Мисията</h3>'
-        '<p class="meta">„Всяко дете да има до себе си значим възрастен“ — ментор, приятел и пример, '
-        'който вярва в него и го подкрепя дългосрочно.</p>'
-        '<h3>Контакти</h3>'
-        '<p class="meta">бул. „Цариградско шосе“ 40, Европарк, София · hello@podarivreme.org · '
-        'Анастасия Цонева, +359 88 339 7755 · <a href="https://www.podarivreme.org" '
-        'target="_blank" rel="noopener">podarivreme.org</a></p>'
-        '<p class="podari-note">Данните за посещенията се обновяват всеки петък от сайта на фондацията '
-        'и писмата ѝ. Директна жива проверка от браузъра не е възможна — сайтът на '
-        'фондацията не позволява заявки от други страници (CORS).</p>'
-        '</article></div></section>'
-        % (len(podari_items), nearest_html, podari_map_html, "".join(podari_days))
+        '%s'
+        % (len(podari_items), nearest_html, podari_map_html, "".join(podari_days),
+           podari_site_html)
     )
     sizes["podari.html"] = write_page(
         "podari.html", shell("podari", "Подари Време", podari_body,

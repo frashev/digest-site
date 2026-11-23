@@ -177,6 +177,10 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .toolbar .filter-toggle{font-weight:700;width:100%;text-align:left;margin-bottom:8px}
 .toolbar.closed .label,.toolbar.closed .chips,.toolbar.closed .btn:not(.filter-toggle){display:none}
 .toolbar.closed .filter-toggle{margin-bottom:0}
+/* Залепена при скрол: свива се до бутон + търсене, иначе целият панел
+   (~650px) закрива екрана; бутонът я разгръща отново (клас force-open) */
+.toolbar.stuck:not(.force-open) .label,.toolbar.stuck:not(.force-open) .chips,.toolbar.stuck:not(.force-open) .btn:not(.filter-toggle){display:none}
+.toolbar.stuck:not(.force-open) .filter-toggle{margin-bottom:0}
 .ev-day{margin:0 0 6px}
 .ev-day h2{font-size:clamp(22px,3vw,26px)}
 .ev-day .count{color:var(--muted);font-size:15px;font-weight:400;font-family:var(--font-sans)}
@@ -389,7 +393,10 @@ window.addEventListener('resize', fitIframes);
     if (noRes) noRes.hidden = visible > 0;
   }
   var tgl = document.getElementById('newsFilterToggle');
-  if (tgl) tgl.addEventListener('click', function(){ tb.classList.toggle('closed'); });
+  if (tgl) tgl.addEventListener('click', function(){
+    if (tb.classList.contains('stuck')) { tb.classList.toggle('force-open'); }
+    else { tb.classList.toggle('closed'); tb.classList.remove('force-open'); }
+  });
   if (window.innerWidth < 900) tb.classList.add('closed');
   // Залепена лента под шапката: височината ѝ се мери на живо (иначе лентата
   // се подпъхва под нея при скрол)
@@ -399,6 +406,17 @@ window.addEventListener('resize', fitIframes);
   }
   stickTop();
   window.addEventListener('resize', stickTop);
+  // При скрол залепената лента се свива до бутон + търсене (иначе целият
+  // панел от ~650px закрива екрана); бутонът я разгръща отново
+  function onScroll(){
+    var h = document.querySelector('.site-header');
+    var top = h ? h.getBoundingClientRect().height + 2 : 120;
+    var stuck = tb.getBoundingClientRect().top <= top + 1;
+    if (stuck) { tb.classList.add('stuck'); }
+    else { tb.classList.remove('stuck'); tb.classList.remove('force-open'); }
+  }
+  window.addEventListener('scroll', onScroll, {passive: true});
+  onScroll();
   tb.querySelectorAll('#catChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
       tb.querySelectorAll('#catChips .fchip').forEach(function(x){ x.classList.remove('on'); });
@@ -465,7 +483,10 @@ window.addEventListener('resize', fitIframes);
     if (noRes) noRes.hidden = visible > 0;
   }
   var tgl = document.getElementById('evFilterToggle');
-  if (tgl) tgl.addEventListener('click', function(){ tb.classList.toggle('closed'); });
+  if (tgl) tgl.addEventListener('click', function(){
+    if (tb.classList.contains('stuck')) { tb.classList.toggle('force-open'); }
+    else { tb.classList.toggle('closed'); tb.classList.remove('force-open'); }
+  });
   if (window.innerWidth < 900) tb.classList.add('closed');
   // Залепена лента под шапката: височината ѝ се мери на живо (иначе лентата
   // се подпъхва под нея при скрол)
@@ -475,6 +496,17 @@ window.addEventListener('resize', fitIframes);
   }
   stickTop();
   window.addEventListener('resize', stickTop);
+  // При скрол залепената лента се свива до бутон + търсене (иначе целият
+  // панел от ~650px закрива екрана); бутонът я разгръща отново
+  function onScroll(){
+    var h = document.querySelector('.site-header');
+    var top = h ? h.getBoundingClientRect().height + 2 : 120;
+    var stuck = tb.getBoundingClientRect().top <= top + 1;
+    if (stuck) { tb.classList.add('stuck'); }
+    else { tb.classList.remove('stuck'); tb.classList.remove('force-open'); }
+  }
+  window.addEventListener('scroll', onScroll, {passive: true});
+  onScroll();
   tb.querySelectorAll('#evCatChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
       tb.querySelectorAll('#evCatChips .fchip').forEach(function(x){ x.classList.remove('on'); });

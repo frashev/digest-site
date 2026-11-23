@@ -2,9 +2,9 @@
 # build-index.py — генерира МНОГОСТРАНИЧЕН сайт с дайджестите.
 # Дизайн: mobile-first, топла хартия (#FBF9F3), един тухлен акцент (#9C493D),
 # лепкаво меню с къси етикети (активната страница е маркирана, менюто се
-# скролва до нея, fade маска показва, че има още). Всяка страница е отделна:
-# index (начало), news (новини), events (събития), week, vreme, podari,
-# radar, cars, aiplan, subs, scout (ако има), search (глобално търсене).
+# скролва до нея). Всяка страница е отделна:
+# index (начало), news (новини), events (събития), vreme, podari,
+# radar, cars, aiplan, scout (ако има), search (глобално търсене).
 # Съдържанието се чете НА СТРАНИЦАТА: малките файлове без скриптове се
 # вграждат директно, изданията (новини/дайджест) и файловете със скриптове
 # се показват във вграден iframe с автоматична височина — височината се мери
@@ -12,8 +12,8 @@
 # празна ивица под съдържанието). Архивът се разгръща на място (data-src се
 # зарежда при първо отваряне). Глобалното търсене чете search.json.
 # Без външни зависимости. Пуска се от publish.ps1 на PC-то.
-# Изход: index.html, news.html, events.html, week.html, vreme.html,
-# podari.html, radar.html, cars.html, aiplan.html, subs.html, scout.html,
+# Изход: index.html, news.html, events.html, vreme.html,
+# podari.html, radar.html, cars.html, aiplan.html, scout.html,
 # search.html, search.json, feed.xml.
 import html as htmlmod
 import json
@@ -38,8 +38,8 @@ PART_EMOJI = {"morning": "🌅", "afternoon": "🌆", "evening": "🌙", "review
 # Страниците, които самият генератор създава — НЕ са съдържание и не се
 # взимат предвид при сканирането (иначе следващото пускане ще ги вземе
 # за единични файлове).
-GENERATED = ("index.html", "news.html", "events.html", "week.html", "vreme.html",
-             "podari.html", "radar.html", "cars.html", "aiplan.html", "subs.html",
+GENERATED = ("index.html", "news.html", "events.html", "vreme.html",
+             "podari.html", "radar.html", "cars.html", "aiplan.html",
              "scout.html", "search.html")
 
 MIN_SIZE = 1024
@@ -397,7 +397,7 @@ SEARCH_JS = """
     needle = (needle || '').trim().toLowerCase();
     if (!data) { results.innerHTML = '<p class="no-results">Зареждам индекса…</p>'; return; }
     if (!needle) {
-      results.innerHTML = '<p class="no-results">Напиши дума — търси в изданията, събитията и седмицата.</p>';
+      results.innerHTML = '<p class="no-results">Напиши дума — търси в изданията и събитията.</p>';
       countEl.textContent = '';
       return;
     }
@@ -579,8 +579,6 @@ def main():
 
     # Единични файлове (фиксиран ред) + еднократни файлове със събития
     single_defs = [
-        ("week", "Седмицата", "Седмицата напред", "Какво предстои през седмицата — от календара и пощата.",
-         "week-ahead.html", "📅"),
         ("vreme", "Времето", "Времето в София", "Прогноза за следващите дни.",
          "weather.html", "🌤️"),
         ("podari", "Подари Време", "Подари Време", "Доброволчество с деца — посещения, обучения и информация.",
@@ -590,9 +588,7 @@ def main():
         ("cars", "Коли", "Коли", "Обяви за коли, които следя.",
          "cars-dashboard.html", "🚗"),
         ("aiplan", "AI план", "AI план", "Какво уча и какво следва.",
-         "udemy-plan-2026-11-05.html", "🤖"),
-        ("subs", "Абонаменти", "Абонаменти", "Месечен одит на абонаментите.",
-         "subscriptions.html", "💳"),
+         "udemy-plan-2026-11-05-site.html", "🤖"),
     ]
     scout_files = sorted(n for n in singles if n.startswith("scout-") and n.endswith(".html"))
     if scout_files:
@@ -702,27 +698,6 @@ def main():
                esc(digest_slug(latest_d)))
         )
 
-    # седмицата — първите 3 точки от week-ahead
-    week_card = ""
-    if "week-ahead.html" in singles:
-        week_body = inline_body("week-ahead.html")
-        items = []
-        for m in re.finditer(r'<div class="item">(.*?)</div>', week_body, re.S):
-            t = re.sub(r"<[^>]+>", "", m.group(1))
-            t = htmlmod.unescape(t).strip()
-            t = re.sub(r"\s+", " ", t)
-            if t:
-                items.append(t)
-            if len(items) >= 3:
-                break
-        if items:
-            week_card = (
-                '<article class="card"><span class="icon">📅</span>'
-                '<h3>Седмицата напред</h3><ul>%s</ul>'
-                '<a class="btn-primary" href="week.html">Цялата седмица →</a></article>'
-                % "".join("<li>%s</li>" % esc(t) for t in items)
-            )
-
     # решетка с разделите
     grid_cards = []
     grid_cards.append(
@@ -751,9 +726,9 @@ def main():
         + '<section aria-labelledby="today-h"><div class="container">'
           '<div class="section-head"><h2 id="today-h">Днес</h2>'
           '<a href="news.html">Всички новини →</a></div>'
-          '<div class="grid">%s%s%s</div>'
+          '<div class="grid">%s%s</div>'
           '</div></section>'
-        % (today_cards, digest_card, week_card)
+        % (today_cards, digest_card)
         + '<section aria-labelledby="sections-h"><div class="container">'
           '<h2 id="sections-h">Раздели</h2>'
           '<p class="section-intro">Всичко на едно място — избери раздел и чети на място.</p>'
@@ -879,27 +854,16 @@ def main():
             "u": "%s.html" % sec_id,
             "s": plain_text(read_file(fname), 300),
         })
-    if "week-ahead.html" in singles:
-        week_body = inline_body("week-ahead.html")
-        for m in re.finditer(r'<div class="item">(.*?)</div>', week_body, re.S):
-            t = re.sub(r"<[^>]+>", "", m.group(1))
-            t = htmlmod.unescape(t).strip()
-            t = re.sub(r"\s+", " ", t)
-            if t:
-                search_entries.append({
-                    "t": t[:120], "d": "", "k": "Седмицата",
-                    "u": "week.html", "s": t,
-                })
     with open(os.path.join(SITE_DIR, "search.json"), "w", encoding="utf-8") as f:
         json.dump(search_entries, f, ensure_ascii=False)
     search_body = (
         '<div class="container" id="top"><div class="page-hero">'
         '<p class="kicker">Търсене</p><h1>Търси в дайджестите</h1>'
-        '<p class="lede">В изданията, събитията и седмицата — наведнъж.</p></div>'
+        '<p class="lede">В изданията и събитията — наведнъж.</p></div>'
         '<div class="searchbar" role="search">'
         '<input id="q" type="search" placeholder="Напиши дума — например преход, джаз, Подари Време…" aria-label="Търси в дайджестите">'
         '<p class="count-line" id="count" aria-live="polite"></p>'
-        '</div><div id="results"><p class="no-results">Напиши дума — търси в изданията, събитията и седмицата.</p></div>'
+        '</div><div id="results"><p class="no-results">Напиши дума — търси в изданията и събитията.</p></div>'
         '</div>'
     )
     sizes["search.html"] = write_page(
@@ -918,19 +882,17 @@ def main():
         "podari": 1 if "podari-vreme.html" in singles else 0,
         "radar": 1 if "radar-actions.html" in singles else 0,
         "cars": 1 if "cars-dashboard.html" in singles else 0,
-        "aiplan": 1 if "udemy-plan-2026-11-05.html" in singles else 0,
+        "aiplan": 1 if "udemy-plan-2026-11-05-site.html" in singles else 0,
         "events": len([d for d in digests if d["kind"] == "evenings"]),
-        "week": 1 if "week-ahead.html" in singles else 0,
         "weather": 1 if "weather.html" in singles else 0,
-        "subs": 1 if "subscriptions.html" in singles else 0,
         "scout": len(scout_files),
         "other": len(other_events),
     }
     print("INDEX: total=%d news=%d digest=%d podari=%d radar=%d cars=%d aiplan=%d "
-          "events=%d week=%d weather=%d subs=%d scout=%d other=%d updated=%s"
+          "events=%d weather=%d scout=%d other=%d updated=%s"
           % (counts["total"], counts["news"], counts["digest"], counts["podari"],
              counts["radar"], counts["cars"], counts["aiplan"], counts["events"],
-             counts["week"], counts["weather"], counts["subs"], counts["scout"],
+             counts["weather"], counts["scout"],
              counts["other"], updated))
     print("INDEX-SIZE: " + " ".join("%s=%d" % (k, v) for k, v in sorted(sizes.items())))
 

@@ -198,6 +198,40 @@ def load_events_registry():
     return [e for e in evs if isinstance(e, dict)]
 
 
+def podari_day_badge(iso, today):
+    d = datetime.strptime(iso, "%Y-%m-%d").date()
+    diff = (d - today).days
+    if diff == 0:
+        return '<span class="ev-free" style="background:#FFEBEE;color:#B71C1C">ДНЕС</span>'
+    if diff == 1:
+        return '<span class="ev-free" style="background:#FFF3E0;color:#E65100">УТРЕ</span>'
+    return '<span class="ev-cat">след %d дни</span>' % diff
+
+
+def podari_places_badge(n):
+    if n is None:
+        return '<span class="ev-free">Онлайн</span>'
+    if n == 0:
+        return '<span class="ev-free" style="background:#FFEBEE;color:#B71C1C">Няма места</span>'
+    if n <= 3:
+        return ('<span class="ev-free" style="background:#FFF3E0;color:#E65100">'
+                'Оставащи места: %d — малко</span>' % n)
+    return '<span class="ev-free">Оставащи места: %d</span>' % n
+
+
+def podari_card_html(it):
+    search = "%s %s %s" % (it["date"], it["place"], it["meta"])
+    return (
+        '<article class="ev-card" data-kind="%s" data-search="%s">'
+        '<div><span class="ev-cat">%s</span></div>'
+        '<h3>%s</h3><p class="ev-venue">%s</p>'
+        '<p>%s</p>'
+        '<p class="ev-links"><a href="%s" target="_blank" rel="noopener">Запиши се →</a></p></article>'
+        % (esc(it["kind"]), esc(search), esc(it["cat"]), esc(it["place"]),
+           esc(it["meta"]), podari_places_badge(it["places"]), esc(it["url"]))
+    )
+
+
 def event_card_html(e):
     name = e.get("name") or ""
     start = e.get("start") or ""
@@ -267,6 +301,7 @@ def is_inlineable(name):
 def scan():
     names = [n for n in os.listdir(SITE_DIR)
              if n.endswith(".html") and n not in GENERATED
+             and n != "podari-map.html"  # фрагмент за страницата Подари Време, не е съдържание
              and "test" not in n.lower() and not n.endswith("-share.html")
              and os.path.getsize(os.path.join(SITE_DIR, n)) >= 1]
     news, digests, singles = [], [], {}
@@ -436,6 +471,13 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .ev-free{display:inline-block;background:#E8F5E9;color:#2E7D32;font-size:12px;font-weight:700;padding:3px 10px;border-radius:var(--r-pill)}
 .ev-cat{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink-soft)}
 .podari-note{font-size:13px;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:3px;vertical-align:-1px}
+.dist{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0}
+.dist td,.dist th{padding:4px 6px;border-bottom:1px solid var(--border);text-align:left}
+.dist th{color:var(--muted);font-size:12px}
+@media (min-width:900px){
+  .nav-inner{flex-wrap:wrap;justify-content:center;overflow:visible}
+}
 """
 
 JS = """
@@ -601,89 +643,25 @@ SEARCH_JS = """
 
 PODARI_JS = """
 (function(){
-  var list = document.getElementById('podari-list');
-  var countEl = document.getElementById('podari-count');
   var q = document.getElementById('podari-q');
+  var countEl = document.getElementById('podari-count');
   var cat = 'all';
-  var data = null;
-  var TRIPS_URL = 'https://www.podarivreme.org/trips';
-  var BRIEF_URL = 'https://www.podarivreme.org/help?tab=briefings&is_briefing=1';
-  var WD = ['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
-  var MN = ['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
-  function fmtDate(iso){
-    var p = iso.split('-');
-    var d = new Date(+p[0], +p[1] - 1, +p[2]);
-    return WD[d.getDay()] + ', ' + d.getDate() + ' ' + MN[d.getMonth()] + ' ' + d.getFullYear() + ' г.';
-  }
-  function dayBadge(iso){
-    var today = new Date(); today.setHours(0, 0, 0, 0);
-    var p = iso.split('-');
-    var d = new Date(+p[0], +p[1] - 1, +p[2]);
-    var diff = Math.round((d - today) / 86400000);
-    if (diff === 0) return '<span class="ev-free" style="background:#FFEBEE;color:#B71C1C">ДНЕС</span>';
-    if (diff === 1) return '<span class="ev-free" style="background:#FFF3E0;color:#E65100">УТРЕ</span>';
-    return '<span class="ev-cat">след ' + diff + ' дни</span>';
-  }
-  function placesBadge(n){
-    if (n === 0) return '<span class="ev-free" style="background:#FFEBEE;color:#B71C1C">Няма места</span>';
-    if (n <= 3) return '<span class="ev-free" style="background:#FFF3E0;color:#E65100">Оставащи места: ' + n + ' — малко</span>';
-    return '<span class="ev-free">Оставащи места: ' + n + '</span>';
-  }
   function render(){
-    if (!data) return;
     var needle = (q.value || '').trim().toLowerCase();
-    var today = new Date(); today.setHours(0, 0, 0, 0);
-    var items = [];
-    (data.trips_sofia || []).forEach(function(t){
-      items.push({kind: 'sofia', cat: 'От София', date: t.date, place: t.place,
-        meta: 'Тръгване: ' + t.dep + ' · Пред дома: ' + t.home + ' · ' + t.point,
-        places: t.places, url: TRIPS_URL});
-    });
-    (data.trips_local || []).forEach(function(t){
-      items.push({kind: 'local', cat: 'Местни групи', date: t.date, place: t.place,
-        meta: 'Среща пред дома: ' + t.home + ' (местна група — без тръгване от София)',
-        places: t.places, url: TRIPS_URL});
-    });
-    (data.trainings || []).forEach(function(t){
-      items.push({kind: 'training', cat: 'Обучения', date: t.date,
-        place: 'Обучение за нови доброволци',
-        meta: 'Онлайн, около 1 час · ' + (t.time || '18:00'), places: null, url: BRIEF_URL});
-    });
-    items = items.filter(function(it){
-      var p = it.date.split('-');
-      var d = new Date(+p[0], +p[1] - 1, +p[2]);
-      return d >= today;
-    });
-    items.sort(function(a, b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
-    var byDay = {};
-    items.forEach(function(it){ (byDay[it.date] = byDay[it.date] || []).push(it); });
-    var html = '';
     var total = 0;
-    Object.keys(byDay).sort().forEach(function(iso){
-      var dayItems = byDay[iso].filter(function(it){
-        return (cat === 'all' || it.kind === cat)
-          && (!needle || (it.place + ' ' + it.meta + ' ' + fmtDate(iso)).toLowerCase().indexOf(needle) !== -1);
-      });
-      if (!dayItems.length) return;
-      total += dayItems.length;
-      html += '<section class="ev-day"><h2>' + fmtDate(iso) + ' ' + dayBadge(iso) + '</h2>';
-      dayItems.forEach(function(it){
-        html += '<article class="ev-card"><div><span class="ev-cat">' + it.cat + '</span></div>'
-          + '<h3>' + it.place + '</h3><p class="ev-venue">' + it.meta + '</p>'
-          + '<p>' + (it.places === null ? '<span class="ev-free">Онлайн</span>' : placesBadge(it.places)) + '</p>'
-          + '<p class="ev-links"><a href="' + it.url + '" target="_blank" rel="noopener">Запиши се →</a></p></article>';
-      });
-      html += '</section>';
+    document.querySelectorAll('#podari-list .ev-card').forEach(function(c){
+      var hit = (cat === 'all' || c.dataset.kind === cat)
+        && (!needle || c.dataset.search.toLowerCase().indexOf(needle) !== -1);
+      c.hidden = !hit;
+      if (hit) total++;
     });
-    list.innerHTML = html || '<p class="no-results">Няма предстоящи посещения за този филтър.</p>';
+    document.querySelectorAll('#podari-list .ev-day').forEach(function(s){
+      var any = false;
+      s.querySelectorAll('.ev-card').forEach(function(c){ if (!c.hidden) any = true; });
+      s.hidden = !any;
+    });
     if (countEl) countEl.textContent = total ? ('Предстоящи: ' + total) : '';
   }
-  fetch('podari-trips.json').then(function(r){ return r.json(); }).then(function(j){
-    data = j; render();
-  }).catch(function(){
-    list.innerHTML = '<p class="no-results">Данните не се заредиха. Актуалните посещения са на '
-      + '<a href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">podarivreme.org/trips</a>.</p>';
-  });
   q.addEventListener('input', render);
   document.querySelectorAll('#podariChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
@@ -693,6 +671,7 @@ PODARI_JS = """
       render();
     });
   });
+  render();
 })();
 """
 
@@ -832,6 +811,32 @@ def main():
     if news:
         articles = parse_news_articles(texts[news[-1]["name"]])
     podari_json_ok = os.path.exists(os.path.join(SITE_DIR, "podari-trips.json"))
+    podari_items = []
+    if podari_json_ok:
+        with open(os.path.join(SITE_DIR, "podari-trips.json"), encoding="utf-8") as f:
+            podari_json = json.load(f)
+        trips_url = podari_json.get("trips_url", "https://www.podarivreme.org/trips")
+        brief_url = podari_json.get("brief_url",
+                                    "https://www.podarivreme.org/help?tab=briefings&is_briefing=1")
+        for t in podari_json.get("trips_sofia", []):
+            podari_items.append({"kind": "sofia", "cat": "От София", "date": t["date"],
+                                 "place": t["place"],
+                                 "meta": "Тръгване: %s · Пред дома: %s · %s"
+                                         % (t["dep"], t["home"], t["point"]),
+                                 "places": t["places"], "url": trips_url})
+        for t in podari_json.get("trips_local", []):
+            podari_items.append({"kind": "local", "cat": "Местни групи", "date": t["date"],
+                                 "place": t["place"],
+                                 "meta": "Среща пред дома: %s (местна група — без тръгване от София)"
+                                         % t["home"],
+                                 "places": t["places"], "url": trips_url})
+        for t in podari_json.get("trainings", []):
+            podari_items.append({"kind": "training", "cat": "Обучения", "date": t["date"],
+                                 "place": "Обучение за нови доброволци",
+                                 "meta": "Онлайн, около 1 час · %s" % t.get("time", "18:00"),
+                                 "places": None, "url": brief_url})
+        podari_items = [it for it in podari_items if it["date"] >= today_iso]
+        podari_items.sort(key=lambda it: (it["date"], it["place"]))
 
     def nav_html(active):
         out = []
@@ -992,8 +997,8 @@ def main():
                 )
             dt = day_date(day, ref_date)
             day_sections.append(
-                '<section class="news-day" id="day-%s">'
-                '<h2>%s, %s <span class="count">· %d новини</span></h2>%s</section>'
+                '<section class="news-day" id="day-%s"><div class="container">'
+                '<h2>%s, %s <span class="count">· %d новини</span></h2>%s</div></section>'
                 % (day.replace(".", "-"), weekday_bg(dt).capitalize(),
                    dt.strftime("%d.%m"), len(days[day]), "".join(group_html))
             )
@@ -1029,8 +1034,8 @@ def main():
             dt = datetime.strptime(iso, "%Y-%m-%d")
             cards = "".join(event_card_html(e) for e in by_day[iso])
             ev_sections.append(
-                '<section class="ev-day" id="day-%s">'
-                '<h2>%s, %s <span class="count">· %d събития</span></h2>%s</section>'
+                '<section class="ev-day" id="day-%s"><div class="container">'
+                '<h2>%s, %s <span class="count">· %d събития</span></h2>%s</div></section>'
                 % (iso, weekday_bg(dt).capitalize(), dt.strftime("%d.%m"),
                    len(by_day[iso]), cards)
             )
@@ -1064,13 +1069,49 @@ def main():
         sizes[sec_id + ".html"] = write_page(
             sec_id + ".html", shell(sec_id, title, body))
 
-    # ================= ПОДАРИ ВРЕМЕ (v3: динамична JS страница) =================
+    # ================= ПОДАРИ ВРЕМЕ (v3: данните се рендват на момента на build-а) =================
+    podari_by_day = {}
+    for it in podari_items:
+        podari_by_day.setdefault(it["date"], []).append(it)
+    nearest_html = ""
+    if podari_items:
+        near_cards = []
+        for it in podari_items[:3]:
+            dt = datetime.strptime(it["date"], "%Y-%m-%d")
+            near_cards.append(
+                '<article class="card"><h3>%s</h3>'
+                '<p class="meta">%s, %s · %s</p><p>%s</p></article>'
+                % (esc(it["place"]), weekday_bg(dt).capitalize(), dt.strftime("%d.%m"),
+                   esc(it["cat"]), podari_places_badge(it["places"]))
+            )
+        nearest_html = (
+            '<section><div class="container"><h2>Най-близки</h2>'
+            '<div class="grid">%s</div></div></section>' % "".join(near_cards)
+        )
+    podari_map_html = ""
+    pm_path = os.path.join(SITE_DIR, "podari-map.html")
+    if os.path.exists(pm_path):
+        podari_map_html = (
+            '<section><div class="container">%s</div></section>'
+            % read_file("podari-map.html")
+        )
+    podari_days = []
+    for iso in sorted(podari_by_day):
+        dt = datetime.strptime(iso, "%Y-%m-%d")
+        cards = "".join(podari_card_html(it) for it in podari_by_day[iso])
+        podari_days.append(
+            '<section class="ev-day" id="pday-%s"><div class="container">'
+            '<h2>%s, %s %s</h2>%s</div></section>'
+            % (iso, weekday_bg(dt).capitalize(), dt.strftime("%d.%m"),
+               podari_day_badge(iso, now.date()), cards)
+        )
     podari_body = (
         '<div class="container" id="top"><div class="page-hero">'
         '<p class="kicker">Доброволчество</p><h1>Подари Време — предстоящи посещения</h1>'
-        '<p class="lede">Данните се обновяват от сайта на фондацията. Показват се само '
-        'предстоящи дати — миналите изобщо не се виждат.</p></div>'
-        '<div class="searchbar" role="search">'
+        '<p class="lede">%d предстоящи · данните се обновяват от сайта на фондацията. '
+        'Показват се само предстоящи дати — миналите изобщо не се виждат.</p></div></div>'
+        '%s%s'
+        '<div class="container"><div class="searchbar" role="search">'
         '<input id="podari-q" type="search" placeholder="Търси място…" aria-label="Търси място">'
         '<div class="chips" id="podariChips">'
         '<button class="fchip on" data-cat="all">Всички</button>'
@@ -1080,9 +1121,7 @@ def main():
         '</div>'
         '<p class="count-line" id="podari-count" aria-live="polite"></p>'
         '</div></div>'
-        '<section><div class="container" id="podari-list">'
-        '<p class="no-results">Зареждам посещенията…</p>'
-        '</div></section>'
+        '<div id="podari-list">%s</div>'
         '<section><div class="container">'
         '<article class="card"><h3>Как се записваш за посещение</h3>'
         '<p class="meta">1) Влез в профила си на podarivreme.org. 2) Отвори „Посещения“ и избери '
@@ -1101,6 +1140,7 @@ def main():
         'и писмата ѝ. Директна жива проверка от браузъра не е възможна — сайтът на '
         'фондацията не позволява заявки от други страници (CORS).</p>'
         '</article></div></section>'
+        % (len(podari_items), nearest_html, podari_map_html, "".join(podari_days))
     )
     sizes["podari.html"] = write_page(
         "podari.html", shell("podari", "Подари Време", podari_body,

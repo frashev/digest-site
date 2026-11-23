@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Табло с автомобилни обяви — Subaru XV, Kia Sportage, Hyundai Tucson</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f4f6f8; color: #1c2733; }
+  header { background: #123c5f; color: #fff; padding: 22px 18px; }
+  header h1 { margin: 0 0 6px; font-size: 22px; }
+  header p { margin: 3px 0; opacity: .92; font-size: 14px; }
+  main { max-width: 1080px; margin: 0 auto; padding: 16px; }
+  .controls { background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .controls .group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .controls label { font-size: 13px; font-weight: 600; color: #43536a; }
+  button.chip { border: 1px solid #b9c6d3; background: #fff; border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 13px; }
+  button.chip.active { background: #123c5f; color: #fff; border-color: #123c5f; }
+  input[type=range] { width: 170px; }
+  select { padding: 6px 8px; border-radius: 8px; border: 1px solid #b9c6d3; font-size: 13px; }
+  #visibleCount { font-size: 13px; color: #43536a; margin-left: auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-top: 16px; }
+  .card { background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; flex-direction: column; gap: 8px; }
+  .card-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .model { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #123c5f; }
+  .price { font-size: 20px; font-weight: 800; color: #0a7a42; white-space: nowrap; }
+  .card h3 { margin: 0; font-size: 15px; line-height: 1.35; }
+  .drop { color: #b3261e; font-weight: 700; font-size: 13px; }
+  .specs { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 13px; color: #33475e; }
+  .meta { font-size: 12px; color: #75859a; }
+  .btn { margin-top: auto; align-self: flex-start; background: #123c5f; color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+  .btn:hover { background: #1a4f7d; }
+  section.note { background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-top: 18px; font-size: 14px; }
+  section.note h2 { margin: 0 0 8px; font-size: 16px; }
+  section.note ul { margin: 6px 0; padding-left: 18px; }
+  section.note li { margin: 4px 0; }
+  footer { max-width: 1080px; margin: 0 auto; padding: 4px 16px 24px; font-size: 12px; color: #75859a; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🚗 Табло с автомобилни обяви</h1>
+  <p>Изготвено на 05.11.2026 · Общо обяви: <strong>14</strong> — Kia Sportage: 7, Hyundai Tucson: 6, Subaru XV: 1</p>
+  <p>Критерии на абонаментите: бензин, автоматична скоростна кутия, 2017–2020 г., до 20 000 €. Обявите са извлечени от писмата на Cars.bg от 01–05.11.2026 (повтарящите се обяви в няколко писма са обединени, с най-новата цена).</p>
+</header>
+<main>
+  <div class="controls">
+    <div class="group"><label>Модел:</label>
+      <button class="chip active" data-filter="all">Всички</button>
+      <button class="chip" data-filter="Subaru XV">Subaru XV</button>
+      <button class="chip" data-filter="Kia Sportage">Kia Sportage</button>
+      <button class="chip" data-filter="Hyundai Tucson">Hyundai Tucson</button>
+    </div>
+    <div class="group"><label for="maxPrice">Макс. цена: <span id="priceVal">20 000 €</span></label>
+      <input type="range" id="maxPrice" min="10000" max="20000" step="250" value="20000">
+    </div>
+    <div class="group"><label for="sortSel">Подредба:</label>
+      <select id="sortSel">
+        <option value="price-asc" selected>Цена: най-евтини първи</option>
+        <option value="price-desc">Цена: най-скъпи първи</option>
+        <option value="mileage-asc">Пробег: най-малък първи</option>
+        <option value="year-desc">Година: най-нови първи</option>
+      </select>
+    </div>
+    <span id="visibleCount"></span>
+  </div>
+  <div class="grid" id="grid">
+<article class="card" data-model="Hyundai Tucson" data-price="10000" data-mileage="205000" data-year="2017">
+  <div class="card-top"><span class="model">Hyundai Tucson</span><span class="price">10 000 €</span></div>
+  <h3>Hyundai Tucson 2017, бензин, 205000 км частно лице, Пловдив</h3>
+  <div class="drop">▼ Цената е паднала от 10 200 €</div>
+  <div class="specs"><span>📅 2017 г.</span><span>🛣️ 205 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Пловдив</span><span>👤 частно лице</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 03.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/690b10a646553c1c3e0665a2" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Kia Sportage" data-price="11999" data-mileage="182000" data-year="2018">
+  <div class="card-top"><span class="model">Kia Sportage</span><span class="price">11 999 €</span></div>
+  <h3>Kia Sportage бензин 4×4 2018, бензин, 182000 км частно лице, Пловдив</h3>
+  <div class="drop">▼ Цената е паднала от 12 500 €</div>
+  <div class="specs"><span>📅 2018 г.</span><span>🛣️ 182 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Пловдив</span><span>👤 частно лице</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 03.11.2026 до 04.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6a40c268abfdd0bc630c6c82" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Subaru XV" data-price="13299" data-mileage="216000" data-year="2018">
+  <div class="card-top"><span class="model">Subaru XV</span><span class="price">13 299 €</span></div>
+  <h3>Subaru XV 1.6i Avt Sport+ 2018, бензин, 216000 км TT Cars, Асеновград</h3>
+  <div class="drop">▼ Цената е паднала от 13 300 €</div>
+  <div class="specs"><span>📅 2018 г.</span><span>🛣️ 216 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Асеновград</span><span>👤 TT Cars</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 01.11.2026 до 04.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6ae22e37e56c4fa7ca095ed3" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Kia Sportage" data-price="13500" data-mileage="190000" data-year="2018">
+  <div class="card-top"><span class="model">Kia Sportage</span><span class="price">13 500 €</span></div>
+  <h3>Kia Sportage 1.6 CH AWD 2018, бензин, 190000 км частно лице, Бургас</h3>
+  
+  <div class="specs"><span>📅 2018 г.</span><span>🛣️ 190 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Бургас</span><span>👤 частно лице</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 03.11.2026 до 03.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6970fef6107a86bc3a0b9464" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Hyundai Tucson" data-price="13800" data-mileage="144000" data-year="2019">
+  <div class="card-top"><span class="model">Hyundai Tucson</span><span class="price">13 800 €</span></div>
+  <h3>Hyundai Tucson 2.0 2019, бензин, 144000 км частно лице, Дупница</h3>
+  
+  <div class="specs"><span>📅 2019 г.</span><span>🛣️ 144 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Дупница</span><span>👤 частно лице</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 01.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6ae196357830b94d120d1c04" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Kia Sportage" data-price="13900" data-mileage="150000" data-year="2017">
+  <div class="card-top"><span class="model">Kia Sportage</span><span class="price">13 900 €</span></div>
+  <h3>Kia Sportage 1.6T-GDI/4x4 2017, бензин, 150000 км частно лице, София</h3>
+  
+  <div class="specs"><span>📅 2017 г.</span><span>🛣️ 150 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 София</span><span>👤 частно лице</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 05.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6ad7dc4a740d1e4d200353a2" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Kia Sportage" data-price="14300" data-mileage="84000" data-year="2020">
+  <div class="card-top"><span class="model">Kia Sportage</span><span class="price">14 300 €</span></div>
+  <h3>Kia Sportage 2.4 2020, бензин, 84000 км Joro Auto, Дупница</h3>
+  
+  <div class="specs"><span>📅 2020 г.</span><span>🛣️ 84 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Дупница</span><span>👤 Joro Auto</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 02.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6a36126a61aebd4629014a72" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Hyundai Tucson" data-price="14999" data-mileage="222216" data-year="2017">
+  <div class="card-top"><span class="model">Hyundai Tucson</span><span class="price">14 999 €</span></div>
+  <h3>Hyundai Tucson 1.6 177 4WD 2017, бензин, 222216 км частно лице, Видин</h3>
+  
+  <div class="specs"><span>📅 2017 г.</span><span>🛣️ 222 216 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Видин</span><span>👤 частно лице</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 01.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6ad5f5831298e5d70f0d9055" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Kia Sportage" data-price="15900" data-mileage="138000" data-year="2020">
+  <div class="card-top"><span class="model">Kia Sportage</span><span class="price">15 900 €</span></div>
+  <h3>Kia Sportage LX 2020, бензин, 138000 км частно лице, Варна</h3>
+  
+  <div class="specs"><span>📅 2020 г.</span><span>🛣️ 138 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Варна</span><span>👤 частно лице</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 04.11.2026 до 04.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6adcf8dd0c22a4a1a201ad42" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Hyundai Tucson" data-price="16900" data-mileage="122000" data-year="2018">
+  <div class="card-top"><span class="model">Hyundai Tucson</span><span class="price">16 900 €</span></div>
+  <h3>Hyundai Tucson 1.6 GDI 2018, бензин, 122000 км НИДО, Пловдив</h3>
+  
+  <div class="specs"><span>📅 2018 г.</span><span>🛣️ 122 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Пловдив</span><span>👤 НИДО</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 01.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6a3fe63524548e0db608c9f4" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Kia Sportage" data-price="16999" data-mileage="88000" data-year="2017">
+  <div class="card-top"><span class="model">Kia Sportage</span><span class="price">16 999 €</span></div>
+  <h3>Kia Sportage 1.6 GT-Line 4x4 2017, бензин, 88000 км D-1 AUTO, София</h3>
+  
+  <div class="specs"><span>📅 2017 г.</span><span>🛣️ 88 000 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 София</span><span>👤 D-1 AUTO</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 03.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6ae8b50e1a47e1b6b00b3053" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Kia Sportage" data-price="17500" data-mileage="64500" data-year="2020">
+  <div class="card-top"><span class="model">Kia Sportage</span><span class="price">17 500 €</span></div>
+  <h3>Kia Sportage 1.6, T-GDI 2020, бензин, 64500 км частно лице, Светлен</h3>
+  
+  <div class="specs"><span>📅 2020 г.</span><span>🛣️ 64 500 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Светлен</span><span>👤 частно лице</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 05.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6a7d5d2418a12f88c604b802" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Hyundai Tucson" data-price="18240" data-mileage="72544" data-year="2020">
+  <div class="card-top"><span class="model">Hyundai Tucson</span><span class="price">18 240 €</span></div>
+  <h3>Hyundai Tucson 1.6 TURBO 2020, бензин, 72544 км АУТО ХЪБ КОРЕЯ ВАРНА, Варна</h3>
+  
+  <div class="specs"><span>📅 2020 г.</span><span>🛣️ 72 544 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Варна</span><span>👤 АУТО ХЪБ КОРЕЯ ВАРНА</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 03.11.2026 до 03.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6ada109ef3e27cb5900e76f2" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+<article class="card" data-model="Hyundai Tucson" data-price="18990" data-mileage="183544" data-year="2019">
+  <div class="card-top"><span class="model">Hyundai Tucson</span><span class="price">18 990 €</span></div>
+  <h3>Hyundai Tucson N-Line*1.6 TGDI 2019, бензин, 183544 км TI Auto House, Пловдив</h3>
+  
+  <div class="specs"><span>📅 2019 г.</span><span>🛣️ 183 544 км</span><span>⛽ Бензин</span><span>⚙️ Автоматична</span><span>📍 Пловдив</span><span>👤 TI Auto House</span></div>
+  <div class="meta">Източник: Cars.bg · обявата е изпращана в писмата от 01.11.2026 до 05.11.2026</div>
+  <a class="btn" href="https://www.cars.bg/offer/6a184fddf4e0499d36069482" target="_blank" rel="noopener">Виж обявата</a>
+</article>
+  </div>
+  <section class="note">
+    <h2>📩 Известия от mobile.bg</h2>
+    <p>Писмата на mobile.bg не съдържат отделните обяви, а само броя на новите обяви по запазените търсения и линк към резултатите. За периода 01–05.11.2026 известията са:</p>
+    <ul><li>04.11.2026 — <strong>Kia Sportage</strong>: 2 нов(а) обява(и) — <a href="https://www.mobile.bg/obiavi/avtomobili-dzhipove/kia/sportage/benzinov/avtomatichna/ot-2017/do-2020/namira-se-v-balgariya?price1=20000&amp;plnk=1416756&amp;pt=1793775601" target="_blank" rel="noopener">виж търсенето в mobile.bg</a></li><li>03.11.2026 — <strong>Kia Sportage</strong>: 1 нов(а) обява(и) — <a href="https://www.mobile.bg/obiavi/avtomobili-dzhipove/kia/sportage/benzinov/avtomatichna/ot-2017/do-2020/namira-se-v-balgariya?price1=20000&amp;plnk=1416756&amp;pt=1793689201" target="_blank" rel="noopener">виж търсенето в mobile.bg</a></li><li>01.11.2026 — <strong>Hyundai Tucson</strong>: 1 нов(а) обява(и) — <a href="https://www.mobile.bg/obiavi/avtomobili-dzhipove/hyundai/tucson/benzinov/avtomatichna/ot-2017/do-2020/namira-se-v-balgariya?price1=20000&amp;plnk=1416754&amp;pt=1793516401" target="_blank" rel="noopener">виж търсенето в mobile.bg</a></li><li>01.11.2026 — <strong>Kia Sportage</strong>: 1 нов(а) обява(и) — <a href="https://www.mobile.bg/obiavi/avtomobili-dzhipove/kia/sportage/benzinov/avtomatichna/ot-2017/do-2020/namira-se-v-balgariya?price1=20000&amp;plnk=1416756&amp;pt=1793516401" target="_blank" rel="noopener">виж търсенето в mobile.bg</a></li></ul>
+  </section>
+</main>
+<footer>Данните са само от писмата в пощата на Philippe (Cars.bg и mobile.bg). Обява, която вече е свалена от сайта, може все още да се показва тук.</footer>
+<script>
+  const grid = document.getElementById('grid');
+  const cardsEls = Array.from(grid.children);
+  let model = 'all';
+  const maxPrice = document.getElementById('maxPrice');
+  const priceVal = document.getElementById('priceVal');
+  const sortSel = document.getElementById('sortSel');
+  const visibleCount = document.getElementById('visibleCount');
+  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function apply() {
+    const max = parseInt(maxPrice.value, 10);
+    priceVal.textContent = fmt(max) + ' €';
+    const sort = sortSel.value;
+    const sorted = cardsEls.slice().sort((a, b) => {
+      const pa = +a.dataset.price, pb = +b.dataset.price;
+      const ma = +a.dataset.mileage, mb = +b.dataset.mileage;
+      const ya = +a.dataset.year, yb = +b.dataset.year;
+      if (sort === 'price-desc') return pb - pa;
+      if (sort === 'mileage-asc') return ma - mb;
+      if (sort === 'year-desc') return yb - ya;
+      return pa - pb;
+    });
+    sorted.forEach(c => grid.appendChild(c));
+    let n = 0;
+    cardsEls.forEach(c => {
+      const ok = (model === 'all' || c.dataset.model === model) && (+c.dataset.price <= max);
+      c.style.display = ok ? '' : 'none';
+      if (ok) n++;
+    });
+    visibleCount.textContent = 'Показани: ' + n + ' от ' + cardsEls.length;
+  }
+  document.querySelectorAll('button.chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('button.chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      model = btn.dataset.filter;
+      apply();
+    });
+  });
+  maxPrice.addEventListener('input', apply);
+  sortSel.addEventListener('change', apply);
+  apply();
+</script>
+</body>
+</html>

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="bg"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Подари време — справка</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background:#f7f3f0; color:#212121; }
+  header { background: linear-gradient(135deg,#b71c1c,#e65100); color:#fff; padding:18px 16px 14px; }
+  header h1 { margin:0 0 6px; font-size:22px; }
+  header p { margin:2px 0; font-size:14px; opacity:.94; }
+  .toolbar { position:sticky; top:0; background:#fff; padding:10px 12px; box-shadow:0 2px 6px rgba(0,0,0,.12); z-index:5; }
+  .toolbar .line { display:flex; gap:8px; }
+  #q { flex:1; padding:10px 12px; font-size:16px; border:1px solid #ccc; border-radius:10px; min-width:0; }
+  #toggle { padding:10px 14px; font-size:15px; border:1px solid #c62828; color:#c62828; background:#fff; border-radius:10px; }
+  #panel { display:none; padding-top:10px; }
+  #panel.open { display:block; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0; }
+  .fchip { padding:7px 12px; border-radius:999px; border:1px solid #999; background:#fff; font-size:14px; cursor:pointer; }
+  .fchip.on { background:#b71c1c; color:#fff; border-color:#b71c1c; }
+  main { padding:12px; max-width:860px; margin:0 auto; }
+  .card { background:#fff; border-radius:12px; padding:12px 14px; margin:0 0 12px; box-shadow:0 1px 4px rgba(0,0,0,.10); }
+  .card h3 { margin:8px 0 4px; font-size:17px; line-height:1.35; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .chip { color:#fff; font-size:12px; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+  .places { font-size:12px; padding:3px 9px; border-radius:999px; background:#eee; white-space:nowrap; }
+  .dyn { font-size:12px; padding:3px 9px; border-radius:999px; background:#e3f2fd; color:#1565c0; white-space:nowrap; }
+  .dyn:empty { display:none; }
+  .dyn.today { background:#c62828; color:#fff; font-weight:700; }
+  .dyn.soon { background:#fff3e0; color:#e65100; font-weight:700; }
+  .dyn.pastb { background:#eee; color:#777; }
+  .card.past { opacity:.5; }
+  .p0 { background:#ffebee; color:#b71c1c; }
+  .p1 { background:#fff3e0; color:#e65100; }
+  .p2 { background:#e8f5e9; color:#2e7d32; }
+  .day { margin:2px 0; font-size:15px; font-weight:600; }
+  .meta { margin:4px 0; font-size:14px; color:#555; line-height:1.45; }
+  .note { margin:6px 0; font-size:14px; line-height:1.5; }
+  details summary { cursor:pointer; color:#c62828; font-size:14px; padding:4px 0; }
+  .btnrow { margin:8px 0 2px; }
+  .btn { display:inline-block; padding:8px 14px; border-radius:999px; background:#c62828; color:#fff; text-decoration:none; font-size:14px; }
+  .urltext { font-size:11px; color:#777; word-break:break-all; user-select:all; margin:2px 0 6px; }
+  .empty { text-align:center; color:#777; padding:30px 0; display:none; }
+  .sw { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:3px; vertical-align:-1px; }
+  .legend { margin:4px 0; font-size:14px; line-height:1.7; }
+  .card h4 { margin:14px 0 4px; font-size:15px; }
+  .ag-count { color:#888; font-weight:400; font-size:13px; }
+  .ag-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:7px 0; border-bottom:1px solid #eee; font-size:14px; }
+  .ag-row:last-child { border-bottom:none; }
+  .ag-time { font-weight:700; min-width:44px; }
+  .ag-dot { width:11px; height:11px; border-radius:50%; flex:none; }
+  .ag-place { font-weight:600; }
+  .ag-note { color:#555; }
+  .ag-drive { color:#555; }
+  .ag-row.past { opacity:.5; }
+  .dist { width:100%; border-collapse:collapse; font-size:14px; margin:6px 0; }
+  .dist td, .dist th { padding:4px 6px; border-bottom:1px solid #eee; text-align:left; }
+  .dist th { color:#888; font-size:12px; }
+  footer { text-align:center; color:#888; font-size:12px; padding:10px 0 26px; }
+</style></head>
+<body>
+<header>
+  <h1>💛 Подари време — справка</h1>
+  <p>Фондация „Подари време“ — деца, лишени от родителска грижа, и техните доброволци-ментори.</p>
+  <p>32 предстоящи посещения · 1 обучения · обновено: 20.11.2026 · оставащите места са снимка от 20.11.2026</p>
+  <p id="todayLine"></p>
+</header>
+<div class="toolbar">
+  <div class="line">
+    <input id="q" type="search" placeholder="Търси: място, програма, новина…">
+    <button id="toggle" type="button">☰ Филтри</button>
+  </div>
+  <div id="panel">
+    <div class="chips" id="catChips">
+      <button class="fchip on" data-cat="all">Всички</button>
+      <button class="fchip" data-cat="sofia">От София</button><button class="fchip" data-cat="local">Местни групи</button><button class="fchip" data-cat="training">Обучения</button><button class="fchip" data-cat="news">Новини</button><button class="fchip" data-cat="program">Дейности и програми</button><button class="fchip" data-cat="org">Организацията</button><button class="fchip" data-cat="support">Подкрепа и късмети</button>
+    </div>
+    <div class="chips" id="monthChips">
+      <button class="fchip on" data-month="all">Всички месеци</button>
+      <button class="fchip" data-month="2026-11">Ноември 2026</button>
+      <button class="fchip" data-month="2026-12">Декември 2026</button>
+      <button class="fchip" data-month="2027">2027</button>
+    </div>
+  </div>
+</div>
+<main>
+
+<section class="card" style="border-left:6px solid #b71c1c">
+  <h3>Какво означават цветовете</h3>
+  <p class="legend"><b>Вид събитие</b> — лентата вляво на всяка карта:<br><span class="sw" style="background:#1565c0"></span> От София · <span class="sw" style="background:#2e7d32"></span> Местни групи · <span class="sw" style="background:#6a1b9a"></span> Обучения · <span class="sw" style="background:#e65100"></span> Новини · <span class="sw" style="background:#ad1457"></span> Дейности и програми · <span class="sw" style="background:#37474f"></span> Организацията · <span class="sw" style="background:#00838f"></span> Подкрепа и късмети</p>
+  <p class="legend"><b>На картата</b> — точките за градовете: <span class="sw" style="background:#2e7d32"></span> до 1 ч 30 мин с кола от София · <span class="sw" style="background:#e65100"></span> до 2 ч 10 мин · <span class="sw" style="background:#c62828"></span> над 2 ч 10 мин</p>
+  <p class="legend"><b>Оставащи места</b> — значката горе вдясно на картата: <span class="sw" style="background:#2e7d32"></span> има места · <span class="sw" style="background:#e65100"></span> малко остават (до 3) · <span class="sw" style="background:#b71c1c"></span> няма места</p>
+  <p class="legend"><b>Кога е</b> — значката до заглавието: <span class="dyn today">ДНЕС</span> <span class="dyn soon">УТРЕ</span> <span class="dyn">след N дни</span> — смята се на момента на отваряне. Миналите събития са избелели и отиват най-отдолу.</p>
+</section>
+
+<section class="card" style="border-left:6px solid #b71c1c">
+  <h3>Агенда — кое кога е</h3>
+  <p class="meta">Всички посещения и обучения, подредени по дати. Филтрите и търсенето горе важат за картите отдолу; агендата винаги показва всичко.</p>
+  <h4>събота, 21 ноември 2026 г. <span class="ag-count">· 8 събития</span></h4><div class="ag-row" data-date="2026-11-21"><span class="ag-time">8:15</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Монтана</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 10:30</span><span class="places p0">Няма места</span><span class="ag-drive">От София: ~2 ч 04 мин · 109 км</span></div><div class="ag-row" data-date="2026-11-21"><span class="ag-time">8:30</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Гаврил Геново</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p0">Няма места</span><span class="ag-drive">От София: ~2 ч 09 мин · 109 км</span></div><div class="ag-row" data-date="2026-11-21"><span class="ag-time">8:30</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Карлово</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 10:30</span><span class="places p1">Оставащи места: 2 — малко</span><span class="ag-drive">От София: ~2 ч 10 мин · 138 км</span></div><div class="ag-row" data-date="2026-11-21"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Хасково</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p2">Оставащи места: 6</span><span class="ag-drive">От София: ~2 ч 16 мин · 227 км (местна група — без тръгване от София)</span></div><div class="ag-row" data-date="2026-11-21"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Стражица</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p2">Оставащи места: 5</span><span class="ag-drive">От София: ~3 ч 35 мин · 255 км (местна група — без тръгване от София)</span></div><div class="ag-row" data-date="2026-11-21"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Петрич</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p1">Оставащи места: 2 — малко</span><span class="ag-drive">От София: ~2 ч 25 мин · 181 км (местна група — без тръгване от София)</span></div><div class="ag-row" data-date="2026-11-21"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Плевен</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p0">Няма места</span><span class="ag-drive">От София: ~2 ч 14 мин · 164 км (местна група — без тръгване от София)</span></div><div class="ag-row" data-date="2026-11-21"><span class="ag-time">13:20</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Самоков</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 15:00</span><span class="places p1">Оставащи места: 2 — малко</span><span class="ag-drive">От София: ~1 ч 26 мин · 60 км</span></div><h4>неделя, 22 ноември 2026 г. <span class="ag-count">· 2 събития</span></h4><div class="ag-row" data-date="2026-11-22"><span class="ag-time">9:00</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Берковица</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 3 — малко</span><span class="ag-drive">От София: ~1 ч 38 мин · 86 км</span></div><div class="ag-row" data-date="2026-11-22"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Велико Търново</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p1">Оставащи места: 2 — малко</span><span class="ag-drive">От София: ~2 ч 59 мин · 220 км (местна група — без тръгване от София)</span></div><h4>четвъртък, 26 ноември 2026 г. <span class="ag-count">· 2 събития</span></h4><div class="ag-row" data-date="2026-11-26"><span class="ag-time">14:00</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Пловдив</span><span class="dyn"></span><span class="ag-note">среща пред дома 14:00</span><span class="places p2">Оставащи места: 9</span><span class="ag-drive">От София: ~1 ч 32 мин · 144 км (местна група — без тръгване от София)</span></div><div class="ag-row" data-date="2026-11-26"><span class="ag-time">18:00</span><span class="ag-dot" style="background:#6a1b9a"></span><span class="ag-place">Обучение за нови доброволци</span><span class="dyn"></span><span class="ag-note">онлайн, около 1 час</span><span class="places p2">Онлайн</span></div><h4>събота, 28 ноември 2026 г. <span class="ag-count">· 6 събития</span></h4><div class="ag-row" data-date="2026-11-28"><span class="ag-time">8:45</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Брацигово</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:15</span><span class="places p0">Няма места</span><span class="ag-drive">От София: ~1 ч 47 мин · 134 км</span></div><div class="ag-row" data-date="2026-11-28"><span class="ag-time">9:00</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Враца</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 1 — малко</span><span class="ag-drive">От София: ~1 ч 33 мин · 111 км</span></div><div class="ag-row" data-date="2026-11-28"><span class="ag-time">9:00</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Долна баня</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 2 — малко</span><span class="ag-drive">От София: ~1 ч 06 мин · 79 км</span></div><div class="ag-row" data-date="2026-11-28"><span class="ag-time">9:00</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Велинград</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p2">Оставащи места: 9</span><span class="ag-drive">От София: ~1 ч 48 мин · 134 км</span></div><div class="ag-row" data-date="2026-11-28"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Стара Загора</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p1">Оставащи места: 2 — малко</span><span class="ag-drive">От София: ~2 ч 20 мин · 231 км (местна група — без тръгване от София)</span></div><div class="ag-row" data-date="2026-11-28"><span class="ag-time">11:00</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Пловдив</span><span class="dyn"></span><span class="ag-note">среща пред дома 11:00</span><span class="places p0">Няма места</span><span class="ag-drive">От София: ~1 ч 32 мин · 144 км (местна група — без тръгване от София)</span></div><h4>неделя, 29 ноември 2026 г. <span class="ag-count">· 3 събития</span></h4><div class="ag-row" data-date="2026-11-29"><span class="ag-time">9:00</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Пещера</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p0">Няма места</span><span class="ag-drive">От София: ~1 ч 38 мин · 131 км</span></div><div class="ag-row" data-date="2026-11-29"><span class="ag-time">9:00</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Мездра</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 3 — малко</span><span class="ag-drive">От София: ~1 ч 24 мин · 102 км</span></div><div class="ag-row" data-date="2026-11-29"><span class="ag-time">11:00</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Звъничево</span><span class="dyn"></span><span class="ag-note">среща пред дома 11:00</span><span class="places p2">Оставащи места: 6</span><span class="ag-drive">От София: ~1 ч 23 мин · 119 км (местна група — без тръгване от София)</span></div><h4>събота, 5 декември 2026 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2026-12-05"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Стара Загора</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p2">Оставащи места: 6</span><span class="ag-drive">От София: ~2 ч 20 мин · 231 км (местна група — без тръгване от София)</span></div><h4>неделя, 6 декември 2026 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2026-12-06"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Велико Търново</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p2">Оставащи места: 5</span><span class="ag-drive">От София: ~2 ч 59 мин · 220 км (местна група — без тръгване от София)</span></div><h4>събота, 12 декември 2026 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2026-12-12"><span class="ag-time">8:45</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Брацигово</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 3 — малко</span><span class="ag-drive">От София: ~1 ч 47 мин · 134 км</span></div><h4>събота, 19 декември 2026 г. <span class="ag-count">· 3 събития</span></h4><div class="ag-row" data-date="2026-12-19"><span class="ag-time">8:30</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Гаврил Геново</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p0">Няма места</span><span class="ag-drive">От София: ~2 ч 09 мин · 109 км</span></div><div class="ag-row" data-date="2026-12-19"><span class="ag-time">10:30</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Стара Загора</span><span class="dyn"></span><span class="ag-note">среща пред дома 10:30</span><span class="places p2">Оставащи места: 5</span><span class="ag-drive">От София: ~2 ч 20 мин · 231 км (местна група — без тръгване от София)</span></div><div class="ag-row" data-date="2026-12-19"><span class="ag-time">11:00</span><span class="ag-dot" style="background:#2e7d32"></span><span class="ag-place">Пловдив</span><span class="dyn"></span><span class="ag-note">среща пред дома 11:00</span><span class="places p0">Няма места</span><span class="ag-drive">От София: ~1 ч 32 мин · 144 км (местна група — без тръгване от София)</span></div><h4>неделя, 20 декември 2026 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2026-12-20"><span class="ag-time">9:00</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Берковица</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 3 — малко</span><span class="ag-drive">От София: ~1 ч 38 мин · 86 км</span></div><h4>събота, 16 януари 2027 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2027-01-16"><span class="ag-time">8:30</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Гаврил Геново</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p2">Оставащи места: 5</span><span class="ag-drive">От София: ~2 ч 09 мин · 109 км</span></div><h4>събота, 30 януари 2027 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2027-01-30"><span class="ag-time">8:30</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Гаврил Геново</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 3 — малко</span><span class="ag-drive">От София: ~2 ч 09 мин · 109 км</span></div><h4>събота, 6 февруари 2027 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2027-02-06"><span class="ag-time">8:30</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Гаврил Геново</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 3 — малко</span><span class="ag-drive">От София: ~2 ч 09 мин · 109 км</span></div><h4>събота, 6 март 2027 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2027-03-06"><span class="ag-time">8:30</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Гаврил Геново</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p1">Оставащи места: 3 — малко</span><span class="ag-drive">От София: ~2 ч 09 мин · 109 км</span></div><h4>събота, 20 март 2027 г. <span class="ag-count">· 1 събитие</span></h4><div class="ag-row" data-date="2027-03-20"><span class="ag-time">8:30</span><span class="ag-dot" style="background:#1565c0"></span><span class="ag-place">Гаврил Геново</span><span class="dyn"></span><span class="ag-note">тръгване от паркинга пред БНБ · пред дома 11:00</span><span class="places p2">Оставащи места: 5</span><span class="ag-drive">От София: ~2 ч 09 мин · 109 км</span></div>
+</section>
+
+<section class="card" style="border-left:6px solid #b71c1c">
+  <h3>Карта — колко далеч е всяко място от София</h3>
+  <p class="meta">Картата е вградена в самия файл и работи без интернет. Цветът показва времето с кола от центъра на София при нормален трафик (маршрутизация OpenStreetMap, 13.11.2026): <span style="color:#2e7d32">● до 1 ч 30 мин</span> · <span style="color:#e65100">● до 2 ч 10 мин</span> · <span style="color:#c62828">● над 2 ч 10 мин</span>. Най-близо по време е Долна баня (~1 ч 06 мин), а по километри — Самоков (60 км). Точното време за всеки град е в списъка по-долу и на картите за посещения.</p>
+  <svg viewBox="0 0 760 360" width="100%" role="img" aria-label="Карта на България с градовете от посещенията"><polygon points="117.3,27.3 146.4,69.6 185.7,62.0 263.5,78.1 412.4,83.5 462.6,57.2 581.9,33.3 655.6,70.7 715.2,81.5 662.6,124.1 625.6,197.7 658.3,256.4 571.1,242.6 467.9,274.9 466.8,326.2 374.6,335.9 303.3,299.9 222.1,328.2 147.2,325.2 140.0,257.2 89.2,224.2 105.9,209.7 94.9,197.5 112.0,164.7 150.6,132.6 101.3,88.2 92.3,50.6" fill="#e8f5e9" stroke="#78909c" stroke-width="1.5"/><circle cx="184.9" cy="185.4" r="8" fill="#b71c1c" stroke="#fff" stroke-width="2"/><text x="194.9" y="189.4" font-size="13" font-weight="700" fill="#b71c1c" style="paint-order:stroke;stroke:#fff;stroke-width:3px">София</text><circle cx="229.9" cy="225.1" r="6" fill="#2e7d32" stroke="#fff" stroke-width="1.5"/><text x="238.9" y="229.1" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Долна баня</text><circle cx="278.7" cy="237.6" r="6" fill="#2e7d32" stroke="#fff" stroke-width="1.5"/><text x="278.7" y="227.6" font-size="12" fill="#212121" text-anchor="middle" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Звъничево</text><circle cx="222.7" cy="139.9" r="6" fill="#2e7d32" stroke="#fff" stroke-width="1.5"/><text x="231.7" y="143.9" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Мездра</text><circle cx="208.2" cy="222.5" r="6" fill="#2e7d32" stroke="#fff" stroke-width="1.5"/><text x="199.2" y="226.5" font-size="12" fill="#212121" text-anchor="end" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Самоков</text><circle cx="329.2" cy="243.2" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="338.2" y="231.2" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Пловдив</text><circle cx="207.7" cy="133.7" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="216.7" y="125.69999999999999" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Враца</text><circle cx="284.1" cy="253.5" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="284.1" y="269.5" font-size="12" fill="#212121" text-anchor="middle" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Пещера</text><circle cx="165.2" cy="130.1" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="157.2" y="146.1" font-size="12" fill="#212121" text-anchor="end" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Берковица</text><circle cx="290.9" cy="254.6" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="299.9" y="246.6" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Брацигово</text><circle cx="252.5" cy="254.4" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="243.5" y="258.4" font-size="12" fill="#212121" text-anchor="end" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Велинград</text><circle cx="174.5" cy="110.6" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="174.5" y="100.6" font-size="12" fill="#212121" text-anchor="middle" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Монтана</text><circle cx="158.3" cy="113.6" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="150.3" y="117.6" font-size="12" fill="#212121" text-anchor="end" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Гаврил Геново</text><circle cx="335.3" cy="191.1" r="6" fill="#e65100" stroke="#fff" stroke-width="1.5"/><text x="344.3" y="195.1" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Карлово</text><circle cx="316.3" cy="112.4" r="6" fill="#c62828" stroke="#fff" stroke-width="1.5"/><text x="325.3" y="116.4" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Плевен</text><circle cx="410.8" cy="264.0" r="6" fill="#c62828" stroke="#fff" stroke-width="1.5"/><text x="419.8" y="268.0" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Хасково</text><circle cx="419.1" cy="213.6" r="6" fill="#c62828" stroke="#fff" stroke-width="1.5"/><text x="428.1" y="217.6" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Стара Загора</text><circle cx="173.0" cy="319.0" r="6" fill="#c62828" stroke="#fff" stroke-width="1.5"/><text x="182.0" y="323.0" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Петрич</text><circle cx="418.7" cy="145.8" r="6" fill="#c62828" stroke="#fff" stroke-width="1.5"/><text x="427.7" y="149.8" font-size="12" fill="#212121" text-anchor="start" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Велико Търново</text><circle cx="451.3" cy="132.0" r="6" fill="#c62828" stroke="#fff" stroke-width="1.5"/><text x="451.3" y="122.0" font-size="12" fill="#212121" text-anchor="middle" style="paint-order:stroke;stroke:#fff;stroke-width:3px">Стражица</text></svg>
+  <details open><summary>Списък по близост до София</summary>
+  <table class="dist"><tr><th>Място</th><th>Време с кола</th><th>Разстояние</th></tr>
+  <tr><td>Долна баня</td><td>~1 ч 06 мин</td><td>79 км</td></tr><tr><td>Звъничево</td><td>~1 ч 23 мин</td><td>119 км</td></tr><tr><td>Мездра</td><td>~1 ч 24 мин</td><td>102 км</td></tr><tr><td>Самоков</td><td>~1 ч 26 мин</td><td>60 км</td></tr><tr><td>Пловдив</td><td>~1 ч 32 мин</td><td>144 км</td></tr><tr><td>Враца</td><td>~1 ч 33 мин</td><td>111 км</td></tr><tr><td>Пещера</td><td>~1 ч 38 мин</td><td>131 км</td></tr><tr><td>Берковица</td><td>~1 ч 38 мин</td><td>86 км</td></tr><tr><td>Брацигово</td><td>~1 ч 47 мин</td><td>134 км</td></tr><tr><td>Велинград</td><td>~1 ч 48 мин</td><td>134 км</td></tr><tr><td>Монтана</td><td>~2 ч 04 мин</td><td>109 км</td></tr><tr><td>Гаврил Геново</td><td>~2 ч 09 мин</td><td>109 км</td></tr><tr><td>Карлово</td><td>~2 ч 10 мин</td><td>138 км</td></tr><tr><td>Плевен</td><td>~2 ч 14 мин</td><td>164 км</td></tr><tr><td>Хасково</td><td>~2 ч 16 мин</td><td>227 км</td></tr><tr><td>Стара Загора</td><td>~2 ч 20 мин</td><td>231 км</td></tr><tr><td>Петрич</td><td>~2 ч 25 мин</td><td>181 км</td></tr><tr><td>Велико Търново</td><td>~2 ч 59 мин</td><td>220 км</td></tr><tr><td>Стражица</td><td>~3 ч 35 мин</td><td>255 км</td></tr>
+  </table></details>
+</section>
+
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-21" data-search="гаврил геново събота, 21.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p0">Няма места</span></div>
+  <h3>Гаврил Геново</h3>
+  <p class="day">събота, 21.11.2026</p>
+  <p class="meta">Тръгване: 8:30 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~2 ч 09 мин · 109 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-21" data-search="карлово събота, 21.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 2 — малко</span></div>
+  <h3>Карлово</h3>
+  <p class="day">събота, 21.11.2026</p>
+  <p class="meta">Тръгване: 8:30 · Пред дома: 10:30 · Паркинг пред БНБ<br>От София: ~2 ч 10 мин · 138 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-21" data-search="монтана събота, 21.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p0">Няма места</span></div>
+  <h3>Монтана</h3>
+  <p class="day">събота, 21.11.2026</p>
+  <p class="meta">Тръгване: 8:15 · Пред дома: 10:30 · Паркинг пред БНБ<br>От София: ~2 ч 04 мин · 109 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-21" data-search="самоков събота, 21.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 2 — малко</span></div>
+  <h3>Самоков</h3>
+  <p class="day">събота, 21.11.2026</p>
+  <p class="meta">Тръгване: 13:20 · Пред дома: 15:00 · Паркинг пред БНБ<br>От София: ~1 ч 26 мин · 60 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-22" data-search="берковица неделя, 22.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 3 — малко</span></div>
+  <h3>Берковица</h3>
+  <p class="day">неделя, 22.11.2026</p>
+  <p class="meta">Тръгване: 9:00 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~1 ч 38 мин · 86 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-28" data-search="враца събота, 28.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 1 — малко</span></div>
+  <h3>Враца</h3>
+  <p class="day">събота, 28.11.2026</p>
+  <p class="meta">Тръгване: 9:00 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~1 ч 33 мин · 111 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-28" data-search="брацигово събота, 28.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p0">Няма места</span></div>
+  <h3>Брацигово</h3>
+  <p class="day">събота, 28.11.2026</p>
+  <p class="meta">Тръгване: 8:45 · Пред дома: 11:15 · Паркинг пред БНБ<br>От София: ~1 ч 47 мин · 134 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-28" data-search="долна баня събота, 28.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 2 — малко</span></div>
+  <h3>Долна баня</h3>
+  <p class="day">събота, 28.11.2026</p>
+  <p class="meta">Тръгване: 9:00 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~1 ч 06 мин · 79 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-28" data-search="велинград събота, 28.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p2">Оставащи места: 9</span></div>
+  <h3>Велинград</h3>
+  <p class="day">събота, 28.11.2026</p>
+  <p class="meta">Тръгване: 9:00 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~1 ч 48 мин · 134 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-29" data-search="пещера неделя, 29.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p0">Няма места</span></div>
+  <h3>Пещера</h3>
+  <p class="day">неделя, 29.11.2026</p>
+  <p class="meta">Тръгване: 9:00 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~1 ч 38 мин · 131 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-11" data-date="2026-11-29" data-search="мездра неделя, 29.11.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 3 — малко</span></div>
+  <h3>Мездра</h3>
+  <p class="day">неделя, 29.11.2026</p>
+  <p class="meta">Тръгване: 9:00 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~1 ч 24 мин · 102 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-12" data-date="2026-12-12" data-search="брацигово събота, 12.12.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 3 — малко</span></div>
+  <h3>Брацигово</h3>
+  <p class="day">събота, 12.12.2026</p>
+  <p class="meta">Тръгване: 8:45 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~1 ч 47 мин · 134 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-12" data-date="2026-12-19" data-search="гаврил геново събота, 19.12.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p0">Няма места</span></div>
+  <h3>Гаврил Геново</h3>
+  <p class="day">събота, 19.12.2026</p>
+  <p class="meta">Тръгване: 8:30 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~2 ч 09 мин · 109 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2026-12" data-date="2026-12-20" data-search="берковица неделя, 20.12.2026 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 3 — малко</span></div>
+  <h3>Берковица</h3>
+  <p class="day">неделя, 20.12.2026</p>
+  <p class="meta">Тръгване: 9:00 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~1 ч 38 мин · 86 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2027" data-date="2027-01-16" data-search="гаврил геново събота, 16.01.2027 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p2">Оставащи места: 5</span></div>
+  <h3>Гаврил Геново</h3>
+  <p class="day">събота, 16.01.2027</p>
+  <p class="meta">Тръгване: 8:30 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~2 ч 09 мин · 109 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2027" data-date="2027-01-30" data-search="гаврил геново събота, 30.01.2027 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 3 — малко</span></div>
+  <h3>Гаврил Геново</h3>
+  <p class="day">събота, 30.01.2027</p>
+  <p class="meta">Тръгване: 8:30 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~2 ч 09 мин · 109 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2027" data-date="2027-02-06" data-search="гаврил геново събота, 06.02.2027 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 3 — малко</span></div>
+  <h3>Гаврил Геново</h3>
+  <p class="day">събота, 06.02.2027</p>
+  <p class="meta">Тръгване: 8:30 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~2 ч 09 мин · 109 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2027" data-date="2027-03-06" data-search="гаврил геново събота, 06.03.2027 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p1">Оставащи места: 3 — малко</span></div>
+  <h3>Гаврил Геново</h3>
+  <p class="day">събота, 06.03.2027</p>
+  <p class="meta">Тръгване: 8:30 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~2 ч 09 мин · 109 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="sofia" data-month="2027" data-date="2027-03-20" data-search="гаврил геново събота, 20.03.2027 посещение софия тръгване" style="border-left:6px solid #1565c0">
+  <div class="row"><span class="chip" style="background:#1565c0">От София</span><span class="dyn"></span><span class="places p2">Оставащи места: 5</span></div>
+  <h3>Гаврил Геново</h3>
+  <p class="day">събота, 20.03.2027</p>
+  <p class="meta">Тръгване: 8:30 · Пред дома: 11:00 · Паркинг пред БНБ<br>От София: ~2 ч 09 мин · 109 км</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-21" data-search="хасково събота, 21.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p2">Оставащи места: 6</span></div>
+  <h3>Хасково</h3>
+  <p class="day">събота, 21.11.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~2 ч 16 мин · 227 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-21" data-search="стражица събота, 21.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p2">Оставащи места: 5</span></div>
+  <h3>Стражица</h3>
+  <p class="day">събота, 21.11.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~3 ч 35 мин · 255 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-21" data-search="петрич събота, 21.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p1">Оставащи места: 2 — малко</span></div>
+  <h3>Петрич</h3>
+  <p class="day">събота, 21.11.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~2 ч 25 мин · 181 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-21" data-search="плевен събота, 21.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p0">Няма места</span></div>
+  <h3>Плевен</h3>
+  <p class="day">събота, 21.11.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~2 ч 14 мин · 164 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-22" data-search="велико търново неделя, 22.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p1">Оставащи места: 2 — малко</span></div>
+  <h3>Велико Търново</h3>
+  <p class="day">неделя, 22.11.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~2 ч 59 мин · 220 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-26" data-search="пловдив четвъртък, 26.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p2">Оставащи места: 9</span></div>
+  <h3>Пловдив</h3>
+  <p class="day">четвъртък, 26.11.2026</p>
+  <p class="meta">Среща пред дома: 14:00<br>От София: ~1 ч 32 мин · 144 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-28" data-search="пловдив събота, 28.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p0">Няма места</span></div>
+  <h3>Пловдив</h3>
+  <p class="day">събота, 28.11.2026</p>
+  <p class="meta">Среща пред дома: 11:00<br>От София: ~1 ч 32 мин · 144 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-28" data-search="стара загора събота, 28.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p1">Оставащи места: 2 — малко</span></div>
+  <h3>Стара Загора</h3>
+  <p class="day">събота, 28.11.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~2 ч 20 мин · 231 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-11" data-date="2026-11-29" data-search="звъничево неделя, 29.11.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p2">Оставащи места: 6</span></div>
+  <h3>Звъничево</h3>
+  <p class="day">неделя, 29.11.2026</p>
+  <p class="meta">Среща пред дома: 11:00<br>От София: ~1 ч 23 мин · 119 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-12" data-date="2026-12-05" data-search="стара загора събота, 05.12.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p2">Оставащи места: 6</span></div>
+  <h3>Стара Загора</h3>
+  <p class="day">събота, 05.12.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~2 ч 20 мин · 231 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-12" data-date="2026-12-06" data-search="велико търново неделя, 06.12.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p2">Оставащи места: 5</span></div>
+  <h3>Велико Търново</h3>
+  <p class="day">неделя, 06.12.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~2 ч 59 мин · 220 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-12" data-date="2026-12-19" data-search="пловдив събота, 19.12.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p0">Няма места</span></div>
+  <h3>Пловдив</h3>
+  <p class="day">събота, 19.12.2026</p>
+  <p class="meta">Среща пред дома: 11:00<br>От София: ~1 ч 32 мин · 144 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="local" data-month="2026-12" data-date="2026-12-19" data-search="стара загора събота, 19.12.2026 посещение местна група" style="border-left:6px solid #2e7d32">
+  <div class="row"><span class="chip" style="background:#2e7d32">Местни групи</span><span class="dyn"></span><span class="places p2">Оставащи места: 5</span></div>
+  <h3>Стара Загора</h3>
+  <p class="day">събота, 19.12.2026</p>
+  <p class="meta">Среща пред дома: 10:30<br>От София: ~2 ч 20 мин · 231 км (местна група — без тръгване от София)</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="training" data-month="2026-11" data-date="2026-11-26" data-search="обучение нови доброволци четвъртък, 26.11.2026" style="border-left:6px solid #6a1b9a">
+  <div class="row"><span class="chip" style="background:#6a1b9a">Обучения</span><span class="dyn"></span><span class="places p2">Онлайн</span></div>
+  <h3>Обучение за нови доброволци</h3>
+  <p class="day">четвъртък, 26.11.2026, 18:00</p>
+  <p class="meta">Около 1 час. Задължително за всеки нов доброволец преди първо посещение: най-важното преди срещата с децата + време за въпроси. Записването е през личния профил — така фондацията отбелязва, че обучението е минато.</p>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/help?tab=briefings&is_briefing=1" target="_blank" rel="noopener">Запиши се</a></p>
+  <p class="urltext">Пълен адрес: https://www.podarivreme.org/help?tab=briefings&is_briefing=1</p>
+</article>
+<article class="card" data-cat="news" data-month="2026-11" data-search="октомври 2026 в цифри отчет от бюлетина, 10.11.2026 31 посещения с 256 доброволци за един месец. образователни уроци, рисуване, дълбане на тикви за хелоуин, пана за народните будители, готвене заедно, спорт, майсторене на коледни сувенири за благотворителни каузи и есенни разходки. участие и в две вкусни каузи: bakery sale в icon и събитието crossroads. посрещнати са много нови доброволци и нови деца." style="border-left:6px solid #e65100">
+  <div class="row"><span class="chip" style="background:#e65100">Новини</span></div>
+  <h3>Октомври 2026 в цифри</h3>
+  <p class="meta">Отчет от бюлетина, 10.11.2026</p>
+  <details><summary>Подробности</summary><p class="note">31 посещения с 256 доброволци за един месец. Образователни уроци, рисуване, дълбане на тикви за Хелоуин, пана за народните будители, готвене заедно, спорт, майсторене на коледни сувенири за благотворителни каузи и есенни разходки. Участие и в две вкусни каузи: Bakery Sale в ICON и събитието Crossroads. Посрещнати са много нови доброволци и нови деца.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Към сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="news" data-month="2026-11" data-search="нова локация: хасково от ноември 2026 семейството на „подари време“ се разраства с още една локация — хасково, с първо посещение на 21.11. местни групи вече има и в плевен, петрич, пловдив, стражица, стара загора и велико търново." style="border-left:6px solid #e65100">
+  <div class="row"><span class="chip" style="background:#e65100">Новини</span></div>
+  <h3>Нова локация: Хасково</h3>
+  <p class="meta">От ноември 2026</p>
+  <details><summary>Подробности</summary><p class="note">Семейството на „Подари време“ се разраства с още една локация — Хасково, с първо посещение на 21.11. Местни групи вече има и в Плевен, Петрич, Пловдив, Стражица, Стара Загора и Велико Търново.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Посещенията</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="news" data-month="" data-search="„училище за работа“ 2026 — как мина 3–8 юни 2026, софия 14-о издание на програмата: 40 младежи от цялата страна, 6 дни в астория гранд хотел. лекции за писане на cv (кристин здравкова) и финансова грамотност (стойне василев от smart money), истински интервюта за работа и разпределение в професионални екипи: строителство, салон за красота, роботика, бръснарство, търговски обект, парамедици, пекарна и ресторант. за първи път — три нови бизнеса, сред които lidl българия (лозен и равно поле). кулминацията е финалният базар на 7 юни. спонсори: lidl, paysafe, фондация bcause, германо-българска индустриално-търговска камара, accenture, sutherland." style="border-left:6px solid #e65100">
+  <div class="row"><span class="chip" style="background:#e65100">Новини</span></div>
+  <h3>„Училище за работа“ 2026 — как мина</h3>
+  <p class="meta">3–8 юни 2026, София</p>
+  <details><summary>Подробности</summary><p class="note">14-о издание на програмата: 40 младежи от цялата страна, 6 дни в Астория Гранд Хотел. Лекции за писане на CV (Кристин Здравкова) и финансова грамотност (Стойне Василев от Smart Money), истински интервюта за работа и разпределение в професионални екипи: Строителство, Салон за красота, Роботика, Бръснарство, Търговски обект, Парамедици, Пекарна и Ресторант. За първи път — три нови бизнеса, сред които LIDL България (Лозен и Равно поле). Кулминацията е финалният базар на 7 юни. Спонсори: LIDL, PaySafe, фондация BCause, Германо-Българска индустриално-търговска камара, Accenture, Sutherland.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/story?id=138" target="_blank" rel="noopener">Историята в сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org/story?id=138</p>
+</article>
+<article class="card" data-cat="news" data-month="2026-11" data-search="нов подкаст: „подкастът на подарете книга“ ноември 2026 нов канал на фондацията — подкаст за пълноценното общуване с децата. вижда се на началната страница на сайта." style="border-left:6px solid #e65100">
+  <div class="row"><span class="chip" style="background:#e65100">Новини</span></div>
+  <h3>Нов подкаст: „Подкастът на Подарете книга“</h3>
+  <p class="meta">Ноември 2026</p>
+  <details><summary>Подробности</summary><p class="note">Нов канал на фондацията — подкаст за пълноценното общуване с децата. Вижда се на началната страница на сайта.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Към сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="news" data-month="" data-search="филмът на фондацията youtube канал „подарени истории“ „подари време: филмът“ разказва 15 щастливи истории за деца и техните доброволци. в същия канал е и филмът за най-голямата програма „училище за работа“. координаторът анастасия цонева изпрати линка на новите доброволци след обучението — за запознаване с каузата отвътре." style="border-left:6px solid #e65100">
+  <div class="row"><span class="chip" style="background:#e65100">Новини</span></div>
+  <h3>Филмът на фондацията</h3>
+  <p class="meta">YouTube канал „Подарени истории“</p>
+  <details><summary>Подробности</summary><p class="note">„Подари време: Филмът“ разказва 15 щастливи истории за деца и техните доброволци. В същия канал е и филмът за най-голямата програма „Училище за работа“. Координаторът Анастасия Цонева изпрати линка на новите доброволци след обучението — за запознаване с каузата отвътре.</p></details>
+  <p class="btnrow"><a class="btn" href="https://youtu.be/03tXKSFHIdw" target="_blank" rel="noopener">Гледай филма</a></p><p class="urltext">Пълен адрес: https://youtu.be/03tXKSFHIdw</p>
+</article>
+<article class="card" data-cat="program" data-month="" data-search="посещенията — сърцето на модела дейност 1 регулярни месечни срещи между доброволците и децата в центровете за настаняване от семеен тип (цнст). моделът е 1:1 — доброволец и дете изграждат лична връзка чрез игри, разговори и общи преживявания. целта не е еднократна помощ, а постоянство: същото дете да вижда същия възрастен отново и отново, докато доброволецът се превърне в негов ментор и значим човек." style="border-left:6px solid #ad1457">
+  <div class="row"><span class="chip" style="background:#ad1457">Дейности и програми</span></div>
+  <h3>Посещенията — сърцето на модела</h3>
+  <p class="meta">Дейност 1</p>
+  <details><summary>Подробности</summary><p class="note">Регулярни месечни срещи между доброволците и децата в центровете за настаняване от семеен тип (ЦНСТ). Моделът е 1:1 — доброволец и дете изграждат лична връзка чрез игри, разговори и общи преживявания. Целта не е еднократна помощ, а постоянство: същото дете да вижда същия възрастен отново и отново, докато доброволецът се превърне в негов ментор и значим човек.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Предстоящи посещения</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+<article class="card" data-cat="program" data-month="" data-search="„училище за работа“ дейност 2 — за младежи 16–18 г. единствената в българия 6-дневна кариерна програма за деца от цнст (по думите на фондацията). веднъж годишно през юни 40–50 младежи идват в софия, настаняват се в хотел и стават част от реални бизнеси на партньори: строителни фирми, салони за красота, хотели, сладкарски цехове, ресторанти, рекламни агенции, it. учат се да пишат cv, да кандидатстват за работа, да се държат на интервю и да задават въпроси. до всеки младеж през цялото време стои доброволец-ментор — подход, уникален за „подари време“. след 14 издания през програмата са минали над 250 младежи." style="border-left:6px solid #ad1457">
+  <div class="row"><span class="chip" style="background:#ad1457">Дейности и програми</span></div>
+  <h3>„Училище за работа“</h3>
+  <p class="meta">Дейност 2 — за младежи 16–18 г.</p>
+  <details><summary>Подробности</summary><p class="note">Единствената в България 6-дневна кариерна програма за деца от ЦНСТ (по думите на фондацията). Веднъж годишно през юни 40–50 младежи идват в София, настаняват се в хотел и стават част от реални бизнеси на партньори: строителни фирми, салони за красота, хотели, сладкарски цехове, ресторанти, рекламни агенции, IT. Учат се да пишат CV, да кандидатстват за работа, да се държат на интервю и да задават въпроси. До всеки младеж през цялото време стои доброволец-ментор — подход, уникален за „Подари време“. След 14 издания през програмата са минали над 250 младежи.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/uzr" target="_blank" rel="noopener">Страницата на програмата</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org/uzr</p>
+</article>
+<article class="card" data-cat="program" data-month="" data-search="„училище за бъдеще“ дейност 2 — за деца 11–14 г. програма за по-малките: учене чрез преживяване и излизане от социалната изолация. лагери, практически и житейски умения, финансова грамотност — подготовка за самостоятелен живот, преди младежите да стигнат до „училище за работа“." style="border-left:6px solid #ad1457">
+  <div class="row"><span class="chip" style="background:#ad1457">Дейности и програми</span></div>
+  <h3>„Училище за бъдеще“</h3>
+  <p class="meta">Дейност 2 — за деца 11–14 г.</p>
+  <details><summary>Подробности</summary><p class="note">Програма за по-малките: учене чрез преживяване и излизане от социалната изолация. Лагери, практически и житейски умения, финансова грамотност — подготовка за самостоятелен живот, преди младежите да стигнат до „Училище за работа“.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Към сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="program" data-month="" data-search="„училище за мечти“ дейност 2 — стартира 2027 г. нова преживелищна програма, специално насочена към най-малките (1–4 клас): учене на мечти, ранно вдъхновение и увереност. стартира от 2027 година." style="border-left:6px solid #ad1457">
+  <div class="row"><span class="chip" style="background:#ad1457">Дейности и програми</span></div>
+  <h3>„Училище за мечти“</h3>
+  <p class="meta">Дейност 2 — стартира 2027 г.</p>
+  <details><summary>Подробности</summary><p class="note">Нова преживелищна програма, специално насочена към най-малките (1–4 клас): учене на мечти, ранно вдъхновение и увереност. Стартира от 2027 година.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Към сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="program" data-month="" data-search="академията на „подари време“ дейност 3 — от 1. клас до университета образователна пирамида в три етапа: 1) „буквар“ — грамотност за деца от 1. до 4. клас; 2) „уроци до диплома“ — индивидуално обучение и подкрепа до матурите; 3) „алма матер“ — кандидатстудентска програма. към академията спадат и монтесори класове за личностно развитие." style="border-left:6px solid #ad1457">
+  <div class="row"><span class="chip" style="background:#ad1457">Дейности и програми</span></div>
+  <h3>Академията на „Подари време“</h3>
+  <p class="meta">Дейност 3 — от 1. клас до университета</p>
+  <details><summary>Подробности</summary><p class="note">Образователна пирамида в три етапа: 1) „Буквар“ — грамотност за деца от 1. до 4. клас; 2) „Уроци до диплома“ — индивидуално обучение и подкрепа до матурите; 3) „Алма Матер“ — кандидатстудентска програма. Към академията спадат и Монтесори класове за личностно развитие.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Към сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="org" data-month="" data-search="мисията фондация „подари време“ „всяко дете да има до себе си значим възрастен“ — ментор, приятел и пример, който вярва в него, изгражда доверие и го подкрепя дългосрочно. фондацията търси такъв човек за всяко изоставено дете в институция и поддържа мрежата от доброволци вече 15 години — „докато и последното дете не открие своя важен човек“." style="border-left:6px solid #37474f">
+  <div class="row"><span class="chip" style="background:#37474f">Организацията</span></div>
+  <h3>Мисията</h3>
+  <p class="meta">Фондация „Подари време“</p>
+  <details><summary>Подробности</summary><p class="note">„Всяко дете да има до себе си значим възрастен“ — ментор, приятел и пример, който вярва в него, изгражда доверие и го подкрепя дългосрочно. Фондацията търси такъв човек за всяко изоставено дете в институция и поддържа мрежата от доброволци вече 15 години — „докато и последното дете не открие своя важен човек“.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Към сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="org" data-month="" data-search="история: от „подарете книга“ до „подари време“ 15+ години всичко започва с инициативата „подарете книга“ — идеята на създателката благовеста пугьова е била да достигне до повече деца чрез книгите. днес фондацията подкрепя деца от цнст в цялата страна, като ги свързва с доброволци-ментори. затова и facebook страницата още носи името podarete.kniga." style="border-left:6px solid #37474f">
+  <div class="row"><span class="chip" style="background:#37474f">Организацията</span></div>
+  <h3>История: от „Подарете книга“ до „Подари време“</h3>
+  <p class="meta">15+ години</p>
+  <details><summary>Подробности</summary><p class="note">Всичко започва с инициативата „Подарете книга“ — идеята на създателката Благовеста Пугьова е била да достигне до повече деца чрез книгите. Днес фондацията подкрепя деца от ЦНСТ в цялата страна, като ги свързва с доброволци-ментори. Затова и Facebook страницата още носи името podarete.kniga.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Към сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="org" data-month="" data-search="в цифри към ноември 2026 над 300 деца в повече от 22 социални услуги (по интервю с координатор: 400 деца в 30 центъра и около 300 активни доброволци всеки месец). досега: 101 376+ подарени часа; 250+ младежи през „училище за работа“; 171 благородни мисии; 1032+ продукта с кауза; 511+ подарени картички." style="border-left:6px solid #37474f">
+  <div class="row"><span class="chip" style="background:#37474f">Организацията</span></div>
+  <h3>В цифри</h3>
+  <p class="meta">Към ноември 2026</p>
+  <details><summary>Подробности</summary><p class="note">Над 300 деца в повече от 22 социални услуги (по интервю с координатор: 400 деца в 30 центъра и около 300 активни доброволци всеки месец). Досега: 101 376+ подарени часа; 250+ младежи през „Училище за работа“; 171 благородни мисии; 1032+ продукта с кауза; 511+ подарени картички.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Към сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="org" data-month="" data-search="контакти и канали екип и социални мрежи адрес: бул. „цариградско шосе“ 40, европарк, софия 1000. имейл: hello@podarivreme.org. проектен координатор: анастасия цонева, +359 88 339 7755 (изпраща писмата до новите доброволци). координатор за велико търново: соня стефанова. канали: имейл бюлетин „доброволчески вести“, facebook (podarete.kniga), instagram (@podari_vreme), linkedin и youtube „подарени истории“." style="border-left:6px solid #37474f">
+  <div class="row"><span class="chip" style="background:#37474f">Организацията</span></div>
+  <h3>Контакти и канали</h3>
+  <p class="meta">Екип и социални мрежи</p>
+  <details><summary>Подробности</summary><p class="note">Адрес: бул. „Цариградско шосе“ 40, Европарк, София 1000. Имейл: hello@podarivreme.org. Проектен координатор: Анастасия Цонева, +359 88 339 7755 (изпраща писмата до новите доброволци). Координатор за Велико Търново: Соня Стефанова. Канали: имейл бюлетин „Доброволчески вести“, Facebook (podarete.kniga), Instagram (@podari_vreme), LinkedIn и YouTube „Подарени истории“.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">podarivreme.org</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="support" data-month="2026-11" data-search="„златната серия“ — коледни късмети от децата кампания, ноември–декември 2026 25 от най-обичаните детски пожелания през годините, събрани в специална златна кутийка: 25 късмета, написани от деца, лишени от родителска грижа, плюс стикер и картичка. приходите подкрепят образованието, талантите и кариерното развитие на децата. поръчка през сайта: доставка с еконт или безплатно с box now. датите на коледните базари, където ще се продава и на място, предстои да се обявят." style="border-left:6px solid #00838f">
+  <div class="row"><span class="chip" style="background:#00838f">Подкрепа и късмети</span></div>
+  <h3>„Златната серия“ — коледни късмети от децата</h3>
+  <p class="meta">Кампания, ноември–декември 2026</p>
+  <details><summary>Подробности</summary><p class="note">25 от най-обичаните детски пожелания през годините, събрани в специална златна кутийка: 25 късмета, написани от деца, лишени от родителска грижа, плюс стикер и картичка. Приходите подкрепят образованието, талантите и кариерното развитие на децата. Поръчка през сайта: доставка с Еконт или безплатно с Box Now. Датите на коледните базари, където ще се продава и на място, предстои да се обявят.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Поръчай от сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="support" data-month="" data-search="месечни дарения — „тихото гориво“ какво покрива всяко дарение редовните дарения гарантират, че нито едно посещение няма да се пропусне: пътуванията на доброволците до всяка точка на българия всяка седмица, непрекъснатия учебен процес през цялата година и личното менторство на младежите. ориентири от сайта: 15 eur изминават още 20 км по пътя към децата; 30 eur осигуряват урок по грамотност за 2 деца; 50 eur — половината път на 15 доброволци до враца." style="border-left:6px solid #00838f">
+  <div class="row"><span class="chip" style="background:#00838f">Подкрепа и късмети</span></div>
+  <h3>Месечни дарения — „тихото гориво“</h3>
+  <p class="meta">Какво покрива всяко дарение</p>
+  <details><summary>Подробности</summary><p class="note">Редовните дарения гарантират, че нито едно посещение няма да се пропусне: пътуванията на доброволците до всяка точка на България всяка седмица, непрекъснатия учебен процес през цялата година и личното менторство на младежите. Ориентири от сайта: 15 EUR изминават още 20 км по пътя към децата; 30 EUR осигуряват урок по грамотност за 2 деца; 50 EUR — половината път на 15 доброволци до Враца.</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org" target="_blank" rel="noopener">Дари през сайта</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org</p>
+</article>
+<article class="card" data-cat="org" data-month="" data-search="как се записваш за посещение стъпки за нови доброволци 1) влез в профила си на podarivreme.org. 2) отвори „посещения“ (/trips) и избери локация и дата. 3) запиши се — местата са ограничени и се виждат в реално време. 4) за тръгване от софия: паркингът пред бнб, в часа за тръгване от графика; местните групи се срещат направо пред дома. 5) ако си нов и още не си минал обучение — първо обучение (всеки четвъртък, 18:00, онлайн)." style="border-left:6px solid #37474f">
+  <div class="row"><span class="chip" style="background:#37474f">Организацията</span></div>
+  <h3>Как се записваш за посещение</h3>
+  <p class="meta">Стъпки за нови доброволци</p>
+  <details><summary>Подробности</summary><p class="note">1) Влез в профила си на podarivreme.org. 2) Отвори „Посещения“ (/trips) и избери локация и дата. 3) Запиши се — местата са ограничени и се виждат в реално време. 4) За тръгване от София: паркингът пред БНБ, в часа за тръгване от графика; местните групи се срещат направо пред дома. 5) Ако си нов и още не си минал обучение — първо обучение (всеки четвъртък, 18:00, онлайн).</p></details>
+  <p class="btnrow"><a class="btn" href="https://www.podarivreme.org/trips" target="_blank" rel="noopener">Към посещенията</a></p><p class="urltext">Пълен адрес: https://www.podarivreme.org/trips</p>
+</article>
+  <p class="empty" id="empty">Няма резултати за този филтър.</p>
+</main>
+<footer>Създадено от Filip Rashev с помощта на AI — за улеснение на доброволците към „Подари време“.<br>Източници: podarivreme.org и писмата от фондацията · Справката се обновява всеки петък.</footer>
+<script>
+  var q = document.getElementById('q');
+  var panel = document.getElementById('panel');
+  document.getElementById('toggle').addEventListener('click', function() { panel.classList.toggle('open'); });
+  var cat = 'all', month = 'all';
+  function apply() {
+    var needle = q.value.trim().toLowerCase();
+    var visible = 0;
+    document.querySelectorAll('.card[data-cat]').forEach(function(c) {
+      var ok = (cat === 'all' || c.dataset.cat === cat)
+        && (month === 'all' || c.dataset.month === month)
+        && (!needle || (c.dataset.search || '').indexOf(needle) !== -1);
+      c.style.display = ok ? '' : 'none';
+      if (ok) visible++;
+    });
+    document.getElementById('empty').style.display = visible ? 'none' : 'block';
+  }
+  q.addEventListener('input', apply);
+  function wire(id, attr, set) {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target.tagName !== 'BUTTON') return;
+      this.querySelectorAll('.fchip').forEach(function(b) { b.classList.remove('on'); });
+      e.target.classList.add('on');
+      set(e.target.dataset[attr]);
+      apply();
+    });
+  }
+  wire('catChips', 'cat', function(v) { cat = v; });
+  wire('monthChips', 'month', function(v) { month = v; });
+  // Dynamics computed at open, standalone: countdown badges, past visits dimmed and moved last.
+  (function() {
+    var WD = ['неделя','понеделник','вторник','сряда','четвъртък','петък','събота'];
+    var MN = ['януари','февруари','март','април','май','юни','юли','август','септември','октомври','ноември','декември'];
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var tl = document.getElementById('todayLine');
+    if (tl) { tl.textContent = 'Днес е ' + WD[now.getDay()] + ', ' + now.getDate() + ' ' + MN[now.getMonth()] + ' ' + now.getFullYear() + ' г. Значките „ДНЕС / УТРЕ / след N дни" се смятат на момента на отваряне.'; }
+    var main = document.querySelector('main');
+    document.querySelectorAll('[data-date]').forEach(function(c) {
+      if (!c.dataset.date) { return; }
+      var p = c.dataset.date.split('-');
+      var d = new Date(+p[0], +p[1] - 1, +p[2]);
+      var diff = Math.round((d - today) / 86400000);
+      var dyn = c.querySelector('.dyn');
+      if (diff < 0) {
+        c.classList.add('past');
+        if (dyn) { dyn.textContent = 'минало'; dyn.classList.add('pastb'); }
+        if (main && c.classList.contains('card')) { main.appendChild(c); }
+      } else if (dyn) {
+        if (diff === 0) { dyn.textContent = 'ДНЕС'; dyn.classList.add('today'); }
+        else if (diff === 1) { dyn.textContent = 'УТРЕ'; dyn.classList.add('soon'); }
+        else { dyn.textContent = 'след ' + diff + ' дни'; }
+      }
+    });
+  })();
+</script>
+</body></html>

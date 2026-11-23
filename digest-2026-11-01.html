@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🗓️ Дайджест — неделя, 1 ноември 2026 · 1–4 ноември 2026</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: 'Segoe UI', Tahoma, Verdana, sans-serif; background:#f4f1ea; color:#212121; }
+  header { background: linear-gradient(135deg,#283593,#6a1b9a); color:#fff; padding:28px 20px 20px; }
+  header h1 { margin:0 0 6px; font-family: Georgia, 'Times New Roman', serif; font-size:1.7rem; letter-spacing:.3px; }
+  header p { margin:4px 0; opacity:.92; }
+  .toolbar { position:sticky; top:0; z-index:10; background:#fffdf7; border-bottom:2px solid #d7ccc8; padding:10px 16px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .toolbar input { flex:1 1 220px; padding:9px 12px; border:1px solid #bdbdbd; border-radius:20px; font-size:1rem; }
+  .fchip { border:1.5px solid #8d6e63; background:#fff; color:#4e342e; border-radius:20px; padding:6px 12px; cursor:pointer; font-size:.86rem; }
+  .fchip.active { background:#4e342e; color:#fff; }
+  .dchip { border:1.5px solid #283593; background:#fff; color:#283593; border-radius:20px; padding:6px 12px; cursor:pointer; font-size:.86rem; font-weight:600; }
+  .dchip.active { background:#283593; color:#fff; }
+  .toolbar .label { font-weight:700; color:#4e342e; font-size:.86rem; }
+  .btn { border:1.5px solid #283593; background:#fff; color:#283593; border-radius:20px; padding:6px 12px; cursor:pointer; font-size:.86rem; }
+  main { max-width:860px; margin:0 auto; padding:8px 14px 40px; }
+  .day-title { font-family: Georgia, 'Times New Roman', serif; text-transform:capitalize; background:#283593; color:#fff; padding:10px 16px; border-radius:10px; margin:26px 0 12px; font-size:1.25rem; }
+  .day-title .count { font-family:'Segoe UI',sans-serif; font-size:.85rem; opacity:.85; text-transform:none; }
+  .card { display:flex; gap:14px; background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.13); padding:14px 16px; margin:10px 0; border-left:6px solid #bdbdbd; }
+  .card.personal { border-left-color:#f9a825; background:#fffde7; }
+  .card.past { opacity:.55; }
+  .time { flex:0 0 62px; height:62px; border-radius:12px; color:#fff; font-weight:700; font-size:1.02rem; display:flex; align-items:center; justify-content:center; }
+  .body { flex:1; min-width:0; }
+  .body h3 { margin:4px 0 6px; font-size:1.08rem; line-height:1.3; }
+  .badges { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .badge { font-size:.75rem; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .badge.personal { background:#f9a825; color:#4e342e; }
+  .badge.free { background:#e8f5e9; color:#2e7d32; border:1px solid #2e7d32; }
+  .badge.past { background:#eeeeee; color:#616161; border:1px solid #9e9e9e; }
+  .badge.new { background:#fce4ec; color:#c2185b; border:1px solid #c2185b; }
+  .chip { font-size:.75rem; border:1.5px solid; border-radius:10px; padding:2px 8px; font-weight:600; }
+  .place { margin:2px 0; color:#424242; }
+  .links { margin:8px 0 4px; }
+  .links a { display:inline-block; margin-right:8px; padding:6px 14px; border-radius:18px; background:#e8eaf6; color:#283593; text-decoration:none; font-weight:600; font-size:.9rem; }
+  .links a:hover { background:#c5cae9; }
+  details { margin-top:6px; }
+  summary { cursor:pointer; color:#6a1b9a; font-weight:600; }
+  .desc { line-height:1.55; margin:8px 0 2px; }
+  footer { text-align:center; color:#757575; padding:18px; font-size:.85rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🗓️ Дайджест на събитията</h1>
+  <p><strong>неделя, 1 ноември – сряда, 4 ноември 2026</strong> · общо 40 събития · 🆕 ново = находка от това пускане</p>
+  <p>Подредени строго по време — ден по ден, час по час. Сивите картички вече са минали. Описанието на всяко събитие се отваря с „Виж пълното описание“. С бутоните „Дни“ горе оставяш видими само дните, които те интересуват — един или няколко.</p>
+</header>
+<div class="toolbar">
+  <input id="q" type="search" placeholder="🔎 Търси по име или място…" oninput="applyFilters()">
+  <span class="label">Дни:</span>
+  <button class="dchip active" data-day="2026-11-01" onclick="toggleDay(this,'2026-11-01')">нед 1.11</button><button class="dchip active" data-day="2026-11-02" onclick="toggleDay(this,'2026-11-02')">пон 2.11</button><button class="dchip active" data-day="2026-11-03" onclick="toggleDay(this,'2026-11-03')">вто 3.11</button><button class="dchip active" data-day="2026-11-04" onclick="toggleDay(this,'2026-11-04')">сря 4.11</button>
+  <button class="btn" onclick="allDays(true)">Всички дни</button>
+  <button class="btn" onclick="allDays(false)">Скрий всички</button>
+  <span class="label">Категории:</span>
+  <button class="fchip active" onclick="filterCat(this,'')">Всички</button>
+  <button class="fchip" onclick="filterCat(this,'🏔️ Планински преходи и разходки')">🏔️ Планински преходи и разходки</button><button class="fchip" onclick="filterCat(this,'🤝 Социални и за необвързани')">🤝 Социални и за необвързани</button><button class="fchip" onclick="filterCat(this,'🎵 Музика, танци и парти')">🎵 Музика, танци и парти</button><button class="fchip" onclick="filterCat(this,'🎭 Култура')">🎭 Култура</button><button class="fchip" onclick="filterCat(this,'💻 Технологии, AI и обучения')">💻 Технологии, AI и обучения</button><button class="fchip" onclick="filterCat(this,'🧘 Здраве и уелнес')">🧘 Здраве и уелнес</button><button class="fchip" onclick="filterCat(this,'📌 Други')">📌 Други</button>
+  <button class="btn" onclick="toggleAll(true)">Разгъни всички описания</button>
+  <button class="btn" onclick="toggleAll(false)">Сгъни всички</button>
+</div>
+<main>
+
+<section class="day" data-date="2026-11-01">
+  <h2 class="day-title">📅 неделя, 1 ноември <span class="count">(19 събития)</span></h2>
+  
+<article class="card" data-cat="🏔️ Планински преходи и разходки" data-name="по красивите и панорамни върхове над асеновград (западни родопи) — bg trekking">
+  <div class="time" style="background:#2e7d32">07:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#2e7d32;color:#2e7d32">🏔️ Планински преходи и разходки</span></div>
+    <h3>По красивите и панорамни върхове над Асеновград (Западни Родопи) — BG Trekking</h3>
+    <p class="place">📍 Руски паметник, София — Руски паметник, София, с придружаващ транспорт</p>
+    <p class="links"><a href="https://www.bgtrekking.com/post/%D0%BF%D0%BE-%D0%BA%D1%80%D0%B0%D1%81%D0%B8%D0%B2%D0%B8-%D0%B8-%D0%BF%D0%B0%D0%BD%D0%BE%D1%80%D0%B0%D0%BC%D0%BD%D0%B8-%D0%B2%D1%8A%D1%80%D1%85%D0%BE%D0%B2%D0%B5-%D0%BD%D0%B0%D0%B4-%D0%90%D1%81%D0%B5%D0%BD%D0%BE%D0%B2%D0%B3%D1%80%D0%B0%D0%B4-%D0%B7%D0%B0%D0%BF%D0%B0%D0%B4%D0%BD%D0%B8-%D0%A0%D0%BE%D0%B4%D0%BE%D0%BF%D0%B8-1-%D0%BD%D0%BE%D0%B5%D0%BC%D0%B2%D1%80%D0%B8-%D0%BD%D0%B5%D0%B4%D0%B5%D0%BB%D1%8F-2026%D0%B3" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Ruski+pametnik+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Походът по красивите и панорамни върхове над Асеновград е еднодневен преход на BG Trekking, който се провежда в неделя с тръгване в 07:00 часа от Руски паметник в София, с придружаващ транспорт. Маршрутът в Западните Родопи включва екопътека „Кутра“ и връх Кутра (535 метра) с четири параклиса, после връх Анатема (660 метра) от „Рибната“ църква през параклис „Св. Петка“. Общата продължителност е около 7 часа, а трудността е средна, с връщане в София около 20:00 часа. Цената е 25 евро за водача плюс още 25 евро за транспорт и организация, или общо 50 евро по посочените пера. Походът съчетава скалисти върхове, параклиси и 360-градусови гледки към долината на река Чая. Подходящ е за хора, които харесват живописни, но не екстремни маршрути с културни акценти.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🏔️ Планински преходи и разходки" data-name="споделен преход! боянски водопад, вр. камен дел">
+  <div class="time" style="background:#2e7d32">07:45</div>
+  <div class="body">
+    <div class="badges"><span class="badge free">🆓 безплатно</span><span class="chip" style="border-color:#2e7d32;color:#2e7d32">🏔️ Планински преходи и разходки</span></div>
+    <h3>Споделен преход! Боянски водопад, вр. Камен дел</h3>
+    <p class="place">📍 Близо до Боянска църква, Бояна — Бояна, близо до Боянска църква, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1115597014451592/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Boyana+Church+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Споделеният преход до Боянски водопад и връх Камен дел се провежда в неделя със среща в 07:45 часа близо до Боянска църква в Бояна. Маршрутът започва с изкачване до Боянски водопад по червената маркировка, продължава към връх Камен дел, откъдето София изглежда като макет, после към хижа Момина скала и Боянско езеро, с връщане в Бояна по зелената маркировка. Общата дължина е около 15 километра с денивелация около 1200 метра, а трудността е средна към трудна, като изкачването към водопада е стръмно и крие риск от подхлъзване. Преходът е споделен, без водач и без такси, но всеки сам отговаря за собствената си безопасност и екипировка, а групата е най-много 8 души. Нужни са стабилни планински обувки с добър грайфер, ветро- и водоустойчиво яке, щеки, храна и вода, както и планинска застраховка. Темпото е нормално и съобразено с най-бавния в групата, а преходът е подходящ за хора с добра физическа издръжливост.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🏔️ Планински преходи и разходки" data-name="добровански скални гъби — зелена странджа">
+  <div class="time" style="background:#2e7d32">09:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#2e7d32;color:#2e7d32">🏔️ Планински преходи и разходки</span></div>
+    <h3>Добровански скални гъби — Зелена Странджа</h3>
+    <p class="place">📍 Автогара Запад, Бургас — Бургас, автогара Запад (спирка Топливо); начало на похода 10:30 от центъра на с. Сини рид</p>
+    <p class="links"><a href="https://zelenastrandja.com/cat_podrobno.php?id=329&amp;main_category_id=1&amp;category_id=1" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Avtogara+Zapad+Burgas" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Походът до Добровански скални гъби е лек неделен поход на Зелена Странджа, който се провежда в неделя с тръгване в 09:00 часа от автогара Запад в Бургас, спирка Топливо. Началото на самия поход е в 10:30 часа от центъра на село Сини рид, а маршрутът води до природната забележителност Добровански скални гъби и обезлюденото село Доброван, обратно по маршрута Ком–Емине. Общата дължина е 10 километра при ниска трудност, с достатъчно време за обяд и почивка сред природата. По пътя се разглеждат джамията Челеби джами и стари дъбови гори, а гледката е панорамна към Черно море и южното крайбрежие. Цената е 15 евро такса за участие, която включва водач и сувенир, а при нужда от осигурен транспорт се добавят още 15 евро. Деца до 18 години с придружител не плащат такса, а походът е подходящ за начинаещи и семейства.</p></details>
+  </div>
+</article>
+<article class="card personal" data-cat="📌 Други" data-name="президентски избори — балотаж (гласуване)">
+  <div class="time" style="background:#616161">09:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge personal">⭐ МОЕ СЪБИТИЕ</span><span class="chip" style="border-color:#616161;color:#616161">📌 Други</span></div>
+    <h3>Президентски избори — балотаж (гласуване)</h3>
+    <p class="place">📍 Секция Цариброд 1 — ул. Балканска 9, Димитровград 18320, Сърбия</p>
+    <p class="links"><a href="https://www.google.com/maps/search/Dimitrovgrad+Serbia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Лично събитие от Google Calendar: гласуване на балотажа на президентските избори в неделя, 1 ноември, от 09:00 до 11:00 часа, в секция Цариброд 1 на ул. Балканска 9 в Димитровград, Сърбия. Записът е в календара му и това е времето, в което е планирано гласуването, а не събитие от публичен източник. Мястото е извън София, така че пътуването до секцията трябва да се планира предварително, включително времето за отиване и връщане. За самото гласуване обикновено е нужен документ за самоличност, а конкретните правила за тази секция не са посочени в календарния запис. Календарният запис не посочва кандидати, нито допълнителни инструкции, така че провери ги по официалните източници за изборите, ако ти трябват. Това е лично събитие и стои на хронологичното си място в деня, откроено като твое.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🤝 Социални и за необвързани" data-name="есенна размяна на дрехи">
+  <div class="time" style="background:#c2185b">10:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#c2185b;color:#c2185b">🤝 Социални и за необвързани</span></div>
+    <h3>Есенна размяна на дрехи</h3>
+    <p class="place">📍 Сан Стефано 35, София — ул. Сан Стефано 35, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1651502346524853/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/San+Stefano+35+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Есенната размяна на дрехи се провежда в неделя, 1 ноември, от 10:00 до 14:00 часа на ул. Сан Стефано 35 в София. Идеята е да се даде нов живот на дрехите: всеки носи дрехи, които вече не ползва, и открива нещо ново за себе си, без непременно да купува. Форматът е топла и споделена среща, в която участниците си разменят дрехи, откриват съкровища и си припомнят, че не е нужно винаги да се купува нещо ново, за да се почувстваш различно. Срещата е и възможност да обновиш гардероба си по устойчив и осъзнат начин, като дрехите намират нов любим човек. Подходяща е за хора, които обичат размяната, устойчивата мода и неформалните социални срещи. Източникът във Facebook е кратък и не посочва входна такса, правила за размяната и дали е нужна предварителна заявка, така че провери ги в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="📌 Други" data-name="фермерски пазар павлово">
+  <div class="time" style="background:#616161">10:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#616161;color:#616161">📌 Други</span></div>
+    <h3>Фермерски пазар Павлово</h3>
+    <p class="place">📍 Площад Знаме на мира — площад Знаме на мира, 1618 София</p>
+    <p class="links"><a href="https://www.facebook.com/events/4335798300022423/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Ploshtad+Zname+na+mira+Pavlovo+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Фермерският пазар Павлово се провежда в неделя от 10:00 до 16:00 часа на площад Знаме на мира в квартал Павлово. Пазарът се организира всяка първа неделя от месеца в парка на кръговото, където производители лично предлагат вкусни и чисти храни и напитки. Освен храна, има и занаятчийски изделия от естествени материали, предложени директно от хората, които са ги произвели. Форматът е подходящ за неделна разходка, пазаруване на сезонни продукти и подкрепа на малки производители. Очаквай сергии с разнообразни продукти и директен контакт с производителите, без посредници. Източникът не посочва входна такса, така че разглеждането вероятно е свободно, но това не е изрично потвърдено.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="фестивал „наука в зоопарка“ в зоологическа градина – софия">
+  <div class="time" style="background:#ad1457">10:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Фестивал „Наука в зоопарка“ в Зоологическа градина – София</h3>
+    <p class="place">📍 Зоологическа градина София — Зоологическа градина, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/3156751534529607/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Sofia+Zoo" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Фестивалът „Наука в зоопарка“ се провежда в неделя, 1 ноември, от 10:00 до 17:00 часа в Зоологическата градина в София, по случай Деня на народните будители, и е организиран от ScienceMeUp заедно със зоопарка. Идеята е зоопаркът за един ден да се превърне в пространство за научни открития, любопитни експерименти и технологични предизвикателства, като младите посетители влизат в ролята на учени, изследователи и изобретатели. В зала „Големи котки“ има STEM изложение с научни и технологични щандове, където се наблюдават експерименти по природни науки и инженерни инсталации от света на роботиката и автоматизацията. По същото време се провеждат научни работилници по химия, физика, биология, електроника и роботика, в които участниците обличат бели престилки, слагат ръкавици и предпазни очила и учат например за ползите и вредите от химичните вещества за дивите животни. Работилниците са по класове — от 1. до 8. клас и за деца от 5–6 години — и участието в тях е с предварително записване, защото местата са ограничени. Участието в работилниците е безплатно, но е необходим стандартният входен билет за зоопарка, който се купува на място, така че събитието не е изцяло безплатно. Форматът е подходящ за семейства с деца и за младежи, любопитни към науката, като програмата е публикувана на страницата на ScienceMeUp.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎵 Музика, танци и парти" data-name="винил базар / vinyl bazaar">
+  <div class="time" style="background:#6a1b9a">11:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#6a1b9a;color:#6a1b9a">🎵 Музика, танци и парти</span></div>
+    <h3>ВИНИЛ БАЗАР / VINYL BAZAAR</h3>
+    <p class="place">📍 Търговски дом, бул. Витоша 1а — бул. Витоша 1а, София (срещу Съдебната палата)</p>
+    <p class="links"><a href="https://www.facebook.com/events/2614338439039132/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Vitosha+1a+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Винил базарът се провежда в неделя, 1 ноември, от 11:00 до 16:00 часа в Търговския дом на бул. Витоша 1а, срещу Съдебната палата, и е организиран от магазин Vintage Stereo. Идеята е среща, посветена на винила и любовта към музиката, на която посетителите разглеждат грамофонни плочи, търсят любимите си изпълнители и споделят неделния ден с други колекционери и меломани. Форматът е пазарен, без сцена и програма с часове — идваш, разглеждаш сергиите и си тръгваш, когато решиш. Подходящ е за колекционери на плочи, за хора, които тепърва започват колекция, и за всеки, който обича музиката на винил. Източникът във Facebook е кратък и не посочва входна такса, списък на продавачите и дали има предварителна заявка, така че провери ги в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="дядо вади ряпа — на сцена „централни хали“">
+  <div class="time" style="background:#ad1457">11:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Дядо вади ряпа — на Сцена „Централни хали“</h3>
+    <p class="place">📍 Централни хали — бул. Княгиня Мария Луиза 25, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1756823059062208/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Tsentralni+hali+Maria+Luiza+25+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">„Дядо вади ряпа“ е куклен спектакъл, който се играе в неделя от 11:00 до 12:00 часа на Сцена „Централни хали“ на бул. Княгиня Мария Луиза 25. Куклен театър Мале-мале представя любимата народна приказка в нов вариант, изпълнен с музика, смях и ярки персонажи. Присъединете се към Дядото и неговата дружина, за да откриете заедно колко ценно е да работим заедно, въпреки различията си, според организаторите. Форматът е спектакъл за деца, подходящ за семейства с малки деца, които искат културна програма в неделя сутрин. Очаквай музика, кукли и интерактивна атмосфера в централните хали. Източникът не посочва цена на билетите, така че провери я във Facebook събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🤝 Социални и за необвързани" data-name="книга за книга — 1 ноември, пл. славейков">
+  <div class="time" style="background:#c2185b">11:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#c2185b;color:#c2185b">🤝 Социални и за необвързани</span></div>
+    <h3>Книга за книга — 1 ноември, пл. Славейков</h3>
+    <p class="place">📍 Площад Славейков — пл. Славейков, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1833821184735190/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Slaveykov+Square+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">„Книга за книга“ е традиционна размяна на книги, която се провежда в неделя, 1 ноември, от 11:00 часа на площад Славейков в София, по случай Деня на народните будители, и е организирана от екипа на „Спаси София“. Идеята е проста: донасяш стара книга и си тръгваш с нова, като споделяш любимите си заглавия с непознати и вземаш нови книги у дома. Форматът е неформална среща на открито на емблематичния площад, без сцена и лекции — основното е обменът на литература и разговорите за четене. Подходяща е за читатели, които искат да освежат библиотеката си без пари и да срещнат хора със сходен вкус. Източникът във Facebook е кратък и не посочва краен час и точни правила на размяната, така че провери ги в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="заедно на голямата сцена със светлин русев">
+  <div class="time" style="background:#ad1457">11:30</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Заедно на Голямата сцена със Светлин Русев</h3>
+    <p class="place">📍 Общински културен институт „Средец“ — ул. Кракра 2А, София</p>
+    <p class="links"><a href="https://paragrafa.com/bulgaria/stolichnata-obshchina-otbeliazva-denia-na-narodnite-buditeli-s-kontserti-izlozhbi-i-sbitiia-za-detsa" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Krakra+2A+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Концертът „Заедно на Голямата сцена със Светлин Русев“ се провежда в неделя, 1 ноември, от 11:30 часа в Общинския културен институт „Средец“ на ул. Кракра 2А, по случай Деня на народните будители. Световноизвестният цигулар Светлин Русев споделя сцената с млади музиканти — Виктор Тренев, Кай Гергов, Мари Баборакова, Мариана Стоева, Калина Борисова и Апостол Атанасов, а на рояла е Мария-Елена Средева. Събитието е част от VI Международен фестивал „МузикАртисимо Фест“ и от програмата на Столичната община за 1 ноември с концерти, изложби и събития за деца. Форматът е класически концерт, в който ментор и млади изпълнители свирят заедно, подходящ за любители на цигулката и за семейства, които искат празнична културна програма в неделя по обяд. Източникът не посочва входна такса и продължителност, така че провери ги преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🧘 Здраве и уелнес" data-name="как да се справим с емоционално незрелите хора?">
+  <div class="time" style="background:#00838f">16:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#00838f;color:#00838f">🧘 Здраве и уелнес</span></div>
+    <h3>Как да се справим с емоционално незрелите хора?</h3>
+    <p class="place">📍 бул. Витоша 50 — бул. Витоша 50, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1756087575817169/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Vitosha+50+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Лекцията „Как да се справим с емоционално незрелите хора?“ се провежда в неделя, 1 ноември, от 16:00 до 18:30 часа на бул. Витоша 50 в София. Темата е, че емоционално незрелите хора не могат да изграждат дълбока, взаимна и сигурна емоционална връзка — не защото не искат, а защото не могат. Според организаторите опитите да ги научим, оправим или да получим признание от тях водят до хронично изтощение и здравословни и други проблеми. Хората, които живеят с емоционално незрели партньори, често стават свръхотговорни, развиват силна емпатия, потискат собствените си нужди и живеят с усещането, че не са достатъчни. Форматът е лекция по психология, подходяща за хора, които разпознават такъв модел в отношенията си и търсят обяснение и граници. Източникът във Facebook не посочва лектор, цена и дали е нужна предварителна регистрация, така че провери ги в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="пътят на славея — концерт">
+  <div class="time" style="background:#ad1457">18:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Пътят на славея — концерт</h3>
+    <p class="place">📍 Дом на културата „Искър“ — Дом на културата „Искър“, София</p>
+    <p class="links"><a href="https://paragrafa.com/bulgaria/stolichnata-obshchina-otbeliazva-denia-na-narodnite-buditeli-s-kontserti-izlozhbi-i-sbitiia-za-detsa" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Dom+na+kulturata+Iskar+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Концертът „Пътят на славея“ се провежда в неделя, 1 ноември, от 18:00 часа в Дома на културата „Искър“ в София, като част от музикалната програма за Деня на народните будители. Заглавието е свързано с дългогодишния проект за камерна вокална музика на вокалния квартет „Славей“, създаден от Надка Караджова. Форматът е концертен спектакъл с вокална музика, подходящ за любители на камерното пеене и за хора, които търсят спокойна празнична вечер. Източникът, потвърдил часа и мястото, е кратък анонс на общинската програма и не посочва изпълнителите за тази дата, входна такса и продължителност, така че провери ги преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎵 Музика, танци и парти" data-name="концерт на млади таланти на academy vienna">
+  <div class="time" style="background:#6a1b9a">18:30</div>
+  <div class="body">
+    <div class="badges"><span class="badge free">🆓 безплатно</span><span class="chip" style="border-color:#6a1b9a;color:#6a1b9a">🎵 Музика, танци и парти</span></div>
+    <h3>Концерт на млади таланти на Academy Vienna</h3>
+    <p class="place">📍 бар The Pit — София</p>
+    <p class="links"><a href="https://modernlife.blog/2026/10/23/%D0%BF%D0%B5%D0%B2%D1%86%D0%B8-%D0%B2%D0%B8%D0%B5%D0%BD%D0%B0-%D0%B0%D0%BA%D0%B4%D0%B5%D0%BC%D0%B8-%D0%B8-modern-life/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/The+Pit+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Концертът на млади таланти на Academy Vienna се провежда в неделя с врати от 18:30 часа в бар The Pit в София. На сцената са учениците по пеене на Мария-Магдалена и Мария Георга от Academy Vienna, с любими песни от българската и световната сцена. Входът е свободен, изрично според източника, което прави концерта добра безплатна опция за неделя вечер. Вечерта има лек хелоуин акцент, а костюмите и маските са добре дошли, без да са задължителни. Форматът е подходящ за хора, които искат да чуят млади певци на живо в барова обстановка, без вход и без предварителна резервация. Източникът не посочва точен адрес на бара и краен час, така че провери ги преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="джим шеридан представя „в името на отца“ — кино „люмиер“">
+  <div class="time" style="background:#ad1457">19:15</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Джим Шеридан представя „В името на отца“ — кино „Люмиер“</h3>
+    <p class="place">📍 Кино „Люмиер“ — НДК, пл. България 1, София</p>
+    <p class="links"><a href="https://kafene.bg/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Cinema+Lumiere+NDK+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Живата легенда на ирландското кино Джим Шеридан лично открива прожекцията на „В името на отца“ в неделя, 1 ноември, от 19:15 часа в кино „Люмиер“, а след филма зрителите могат да се срещнат с него и да му зададат въпроси. Събитието е част от фестивала Синелибри и се провежда със съдействието на Посолството на Ирландия. Шеридан има шест номинации и две награди „Оскар“, а филмите му са събрали 16 номинации за „Оскар“. Филмът разказва покъртителната история на Гери Конлън и битката му за справедливост. Подходящо е за любители на авторското кино и за среща с режисьор от световна класа. Цената не е посочена в източника — провери я на cinelibri.com или на касата на киното.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="якоб йония представя „най-далечната граница“ — дом на киното">
+  <div class="time" style="background:#ad1457">19:15</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Якоб Йония представя „Най-далечната граница“ — Дом на киното</h3>
+    <p class="place">📍 Дом на киното — София</p>
+    <p class="links"><a href="https://kafene.bg/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Dom+na+kinoto+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Датският автор Якоб Йония открива премиерата на криминалната драма „Най-далечната граница“ в неделя, 1 ноември, от 19:15 часа в Дома на киното, а преди прожекцията ще бъде представено и българското издание на романа. Филмът е екранизация на собствения му роман под режисурата на Кристофер Бое. Йония е известен с поредицата за специалния отдел за разследване на престъпления, превърнал се в датски аналог на ФБР. Събитието е част от фестивала Синелибри и е подходящо за любители на скандинавското крими и литературните екранизации. Внимание: същата вечер по същото време е и прожекцията на Шеридан в „Люмиер“ — трябва да се избере едната. Цената не е посочена в източника.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎵 Музика, танци и парти" data-name="coroner, hour of penance, maltworm / 1 november / sofia">
+  <div class="time" style="background:#6a1b9a">20:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#6a1b9a;color:#6a1b9a">🎵 Музика, танци и парти</span></div>
+    <h3>CORONER, Hour Of Penance, Maltworm / 1 November / Sofia</h3>
+    <p class="place">📍 Joy Station — ул. Академик Стефан Младенов 3, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/2098370724422546/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Joy+Station+Mladenov+3+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">CORONER е първият концерт в София на швейцарските траш метъл пионери, който се провежда в неделя от 20:00 часа в Joy Station на ул. Академик Стефан Младенов 3. Концертът е част от турнето за първия им албум от 32 години „Dissonance Theory“, който е описан като много силен. Подгряват италианците Hour of Penance и българите Maltworm, което прави вечерта интересна за фенове на екстремния метъл от три държави. Форматът е голям клубен метъл концерт, подходящ за почитатели на жанра и за хора, които искат да видят легендарна група за първи път в България. Цената е от 32 евро, според allevents, а деца до 7 години влизат без билет, според същия източник. Важно уточнение е, че Bandsintown посочва 19:00 часа, но използваният час е 20:00 от Facebook събитието и анонса на организатора BGTSC.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="„исихия“ — образи на тишина и духовното съзерцание от катерина кацарова">
+  <div class="time" style="background:#ad1457">20:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>„Исихия“ — образи на тишина и духовното съзерцание от Катерина Кацарова</h3>
+    <p class="place">📍 Централни хали — бул. Княгиня Мария Луиза 25, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1812443469887206/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Tsentralni+hali+Maria+Luiza+25+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">„Исихия“ е изложба с образи на тишина и духовно съзерцание от художничката Катерина Кацарова, която се провежда в неделя от 20:00 часа в Централни хали на бул. Княгиня Мария Луиза 25. Темата е тишината и духовното съзерцание, пресъздадени чрез образи, което предполага спокойна и съзерцателна изложбена вечер. Форматът е подходящ за любители на изкуството, които търсят по-тиха и размисляща програма в неделя вечер. Очаквай изложба, която кани към забавяне и вглеждане, а не към шумно парти. Източникът във Facebook е беден на детайли и не посочва цена, програма и краен час, така че провери ги в събитието преди да тръгнеш. Ако темата за тишината и съзерцанието ти е близка, това е най-спокойното културно предложение за вечерта.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎵 Музика, танци и парти" data-name="papi hans — тъмният концерт в софия (втора дата)">
+  <div class="time" style="background:#6a1b9a">21:30</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#6a1b9a;color:#6a1b9a">🎵 Музика, танци и парти</span></div>
+    <h3>Papi Hans — ТЪМНИЯТ КОНЦЕРТ В СОФИЯ (втора дата)</h3>
+    <p class="place">📍 Pirotska 5 Event Center — ул. Пиротска 5, София</p>
+    <p class="links"><a href="https://www.bandsintown.com/de/a/15546941-papi-hans?came_from=209" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Pirotska+5+Event+Center+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Papi Hans — ТЪМНИЯТ КОНЦЕРТ В СОФИЯ се играе за втори път в неделя от 21:30 часа в Pirotska 5 Event Center на ул. Пиротска 5. Това е второто изпълнение на същото шоу след съботната дата, за хората, които са изпуснали първата вечер. Форматът е тъмен концерт, в който поп хитовете на Papi Hans звучат в специална хелоуинска атмосфера. Събитието е подходящо за фенове на изпълнителя, които предпочитат неделната вечер, или за тези, които не са успели да си вземат билет за събота. Очаквай същата програма като на 31 октомври, с поп хитове и поезия на сцената. Източникът не посочва цена на билетите и краен час, така че провери ги на Bandsintown преди да тръгнеш.</p></details>
+  </div>
+</article>
+</section>
+<section class="day" data-date="2026-11-02">
+  <h2 class="day-title">📅 понеделник, 2 ноември <span class="count">(6 събития)</span></h2>
+  
+<article class="card" data-cat="🎭 Култура" data-name="свилена тенева — извънвремие, изложба-живопис (вернисаж)">
+  <div class="time" style="background:#ad1457">18:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Свилена ТЕНЕВА — ИЗВЪНВРЕМИЕ, изложба-живопис (вернисаж)</h3>
+    <p class="place">📍 Галерия „Париж“ — ул. Цар Самуил 47, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/3155601507969667/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Tsar+Samuil+47+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Вернисажът на изложбата „Извънвремие“ на Свилена Тенева се провежда в понеделник, 2 ноември, от 18:00 до 20:00 часа в галерия „Париж“ на ул. Цар Самуил 47 в София. Това е първото ѝ откриване в тази галерия, а самата изложба продължава от 2 до 14 ноември 2026 г. Експозицията се състои от тринадесет картини, от които единадесет живописни платна и два акварела, обединени от думата „Извънвремие“. Свилена Тенева е представена като млада, но вече добре позната на българската публика художничка. Форматът е класически вернисаж — откриване с публиката, разглеждане на творбите и разговор с авторката и гостите. Подходящ е за любители на живописта и за хора, които търсят спокойна културна вечер в центъра. Източникът във Facebook не посочва входна такса и подробности за отделните творби, така че провери ги в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="„пътешествията на достоевски“ — българска премиера с павел павликовски">
+  <div class="time" style="background:#ad1457">18:30</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>„Пътешествията на Достоевски“ — българска премиера с Павел Павликовски</h3>
+    <p class="place">📍 Кино „Люмиер“ — НДК, пл. България 1, София</p>
+    <p class="links"><a href="https://kafene.bg/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Cinema+Lumiere+NDK+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">За първи път в България се излъчва документалният филм „Пътешествията на Достоевски“ в понеделник, 2 ноември, от 18:30 часа в кино „Люмиер“. Филмът е трагикомична история за сблъсъка на Изтока и Запада, разказана чрез житейските перипетии на ватмана Дмитрий Достоевски, потомък на великия писател. Прожекцията е част от специалните събития на Синелибри с участието на Павел Павликовски. Подходяща е за ценители на документалното и авторското кино. Цената не е посочена в източника — провери я на cinelibri.com или на касата на киното.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="culturama в музея 2026: вивалди — „четирите годишни времена“">
+  <div class="time" style="background:#ad1457">19:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>CULTURAMA В МУЗЕЯ 2026: Вивалди — „Четирите годишни времена“</h3>
+    <p class="place">📍 Софийска градска художествена галерия — Софийска градска художествена галерия, София</p>
+    <p class="links"><a href="https://allevents.in/sofia/culturama-v-muzeya-2026-chetyrite-godishni-vremena/200030790095532" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Sofia+City+Art+Gallery+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">„Четирите годишни времена“ на Вивалди е камерен концерт за цигулка и китара в понеделник, 2 ноември, от 19:00 часа в Софийската градска художествена галерия, част от фестивала CULTURAMA В МУЗЕЯ 2026. Идеята е нов, интимен прочит на един от най-разпознаваемите шедьоври в музиката — само с два инструмента, без пълен оркестър. Традиционният струнен ансамбъл и басо континуо са поверени на една-единствена китара, която едновременно е оркестър, континуо и равноправен партньор на цигулката. На сцената са германският цигулар Линус Рот и косовският китарист Петрит Чеку, а концертът продължава около 60 минути и се изпълнява сред творби на скулптора Павел Койчев. Музиката преминава през картините на Вивалди — птичи песни и ромон на потоци през пролетта, зной и буря през лятото, танци и лов през есента, ледени ветрове и топлина край огъня през зимата. Билетите са 30 евро, а според описанието резултатът не е просто редукция на оригинала, а вдъхновено претворяване с театрална енергия и виртуозен блясък.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="кирков в софия: stand up comedy „защото ми пука“ | премиера 2.11">
+  <div class="time" style="background:#ad1457">19:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Кирков в София: Stand Up Comedy „Защото ми пука“ | Премиера 2.11</h3>
+    <p class="place">📍 The Comedy Club Sofia — София (точният адрес не е посочен в описанието на събитието)</p>
+    <p class="links"><a href="https://www.facebook.com/events/1741431440518305/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Comedy+Club+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">„Защото ми пука“ е новото стендъп шоу на Иван Кирков, чиято премиера в София е на 2 ноември от 19:00 часа в The Comedy Club Sofia, като същата вечер има и второ представление в 21:00 часа, а шоуто се играе отново на 4 ноември. Идеята на шоуто е искрен разговор за модерното безразличие — ежедневните отношения, престорената загриженост и удобното безразличие, което всички разпознаваме, но рядко признаваме. Форматът е философска и безкомпромисна стендъп комедия в типичния за Кирков остър стил, с директни и провокативни шеги. Шоуто е за възрастна публика, тъй като съдържа нецензурен език и не е подходящо за лица под 16 години. Иван Кирков е комедиант, продуцент и основател на Комеди Клуб България, който от 2012 година развива стендъп комедията у нас. Билети се продават през сайта, посочен в събитието, като цената не е изписана в описанието му. Комеди Клубът е първият и единствен клуб за стендъп комедия в България и според описанието е място за развитие на таланти и дом на водещи български комедианти.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="романтизъм. възвишеното — лекция">
+  <div class="time" style="background:#ad1457">19:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Романтизъм. Възвишеното — лекция</h3>
+    <p class="place">📍 Pi Point — ул. Цар Самуил 70, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1778548246689883/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Tsar+Samuil+70+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Лекцията „Романтизъм. Възвишеното“ се провежда в понеделник, 2 ноември, от 19:00 часа в Pi Point на ул. Цар Самуил 70 в София и продължава час и половина. Темата е романтизмът като епоха, която поставя въображението, емоциите и индивидуалното преживяване в центъра на изкуството. Форматът е лекция с предварителна регистрация, която е задължителна за присъствие, през формуляр на организаторите. Входът е 6 евро, според описанието във Facebook. Подходяща е за хора, които се интересуват от история на изкуството, литература и философия и искат достъпен увод в романтизма. Източникът не посочва името на лектора, така че провери го в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="„студена война“ + дискусия с павел павликовски">
+  <div class="time" style="background:#ad1457">19:30</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>„Студена война“ + дискусия с Павел Павликовски</h3>
+    <p class="place">📍 Кино „Люмиер“ — НДК, пл. България 1, София</p>
+    <p class="links"><a href="https://kafene.bg/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Cinema+Lumiere+NDK+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Прожекция на хладния шедьовър „Студена война“ (2018) на Павел Павликовски в понеделник, 2 ноември, от 19:30 часа в кино „Люмиер“, след която публиката може да се включи в дискусия със самия режисьор. Филмът въвежда в свят, в който идеологически въоръжената бюрократична машина на държавата ограничава свободата на личността и поставя на изпитание нейната морална устойчивост. Събитието е част от програмата на Синелибри в София. Подходящо е за хора, които ценят интимното авторско кино и разговора с режисьора след прожекцията. Цената не е посочена в източника.</p></details>
+  </div>
+</article>
+</section>
+<section class="day" data-date="2026-11-03">
+  <h2 class="day-title">📅 вторник, 3 ноември <span class="count">(8 събития)</span></h2>
+  
+<article class="card" data-cat="💻 Технологии, AI и обучения" data-name="dynamics connect 2026">
+  <div class="time" style="background:#1565c0">08:30</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#1565c0;color:#1565c0">💻 Технологии, AI и обучения</span></div>
+    <h3>Dynamics Connect 2026</h3>
+    <p class="place">📍 Интер Експо Център — Интер Експо Център, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1759596538594606/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Inter+Expo+Center+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Dynamics Connect 2026 се провежда във вторник, 3 ноември, от 08:30 часа в Интер Експо Център в София и събира експерти по Microsoft Dynamics, технологични партньори и бизнес лидери. Събитието е посветено на практически прозрения, живи демонстрации, сесии с експерти и професионален нетуъркинг. Темите включват най-новите развития в Microsoft Dynamics 365 Business Central, изкуствен интелект, търговия на дребно, хотелиерство, бизнес технологии и дигитална трансформация, с акцент върху реалните приложения и бизнес стойността. Форматът е еднодневна конференция, подходяща за хора, които работят с Dynamics или с бизнес софтуер и искат практически примери, а не само презентации. Източникът във Facebook не посочва цена, програма по часове и дали е нужна предварителна регистрация, така че провери ги в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card personal" data-cat="📌 Други" data-name="тест на слуха — ototon">
+  <div class="time" style="background:#616161">10:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge personal">⭐ МОЕ СЪБИТИЕ</span><span class="chip" style="border-color:#616161;color:#616161">📌 Други</span></div>
+    <h3>Тест на слуха — Ototon</h3>
+    <p class="place">📍 Ototon — бул. Цар Освободител 12, София</p>
+    <p class="links"><a href="https://www.google.com/maps/search/Tsar+Osvoboditel+12+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Личен запис от Google Calendar: тест на слуха в Ototon във вторник, 3 ноември, от 10:00 до 11:00 часа, на бул. Цар Освободител 12 в София. Записът е в календара му и това е времето на запазения час, а не събитие от публичен източник. Форматът е индивидуална проверка на слуха в специализиран център, която обикновено включва разговор и измервания, но календарният запис не посочва подробности за процедурата. Мястото е в центъра на София, близо до другите му ангажименти през деня. Календарният запис не посочва цена, нито дали е нужно да се носи нещо, така че провери ги при Ototon, ако ти трябват. Това е лично събитие и стои на хронологичното си място в деня, откроено като твое.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="💻 Технологии, AI и обучения" data-name="ai-native engineering workflows — практически уъркшоп с цветан цветанов (онлайн)">
+  <div class="time" style="background:#1565c0">17:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#1565c0;color:#1565c0">💻 Технологии, AI и обучения</span></div>
+    <h3>AI-Native Engineering Workflows — практически уъркшоп с Цветан Цветанов (онлайн)</h3>
+    <p class="place">📍 Онлайн</p>
+    <p class="links"><a href="https://workshops.dev.bg" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/DEV.BG+workshops" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Практически уъркшоп на DEV.BG за надграждане на Claude Code, изграждане на собствен agentic harness и оркестриране на множество AI агенти без загуба на контрол върху архитектурата и качеството, във вторник, 3 ноември, от 17:00 до 20:00 часа, онлайн. Водещ е Цветан Цветанов (Camplight), а форматът е две практически сесии с реални примери, запис за 7 дни и Discord група с лектора. Втората сесия е на 10 ноември, 17:00–20:00 часа. Подходящ е за разработчици, които вече ползват AI асистенти и искат да преминат към надеждни AI-native процеси. Цената е 199 €, с 15% отстъпка за общността на DEV.BG с промокод AINEW-15. Линкът е към страницата с уъркшопите на DEV.BG — точният линк към събитието не беше в текста на писмото.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="наслоения — изложба на вълка парушева (откриване)">
+  <div class="time" style="background:#ad1457">18:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>НАСЛОЕНИЯ — изложба на Вълка Парушева (откриване)</h3>
+    <p class="place">📍 Галерия „Сердика“ — ул. Цар Самуил 90Б, етаж 2, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1156090697034124/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Tsar+Samuil+90B+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Официалното откриване на изложбата „Наслоения“ на Вълка Парушева се провежда във вторник, 3 ноември, от 18:00 до 20:00 часа в галерия „Сердика“ на ул. Цар Самуил 90Б, етаж 2, в София. Изложбата продължава от 3 до 21 ноември 2026 г. и представя 26 творби, в които се срещат нишката, пикселът и времето. Авторката е носител на тазгодишната награда на Съюза на българските художници от Националната изложба на секция „Текстил“. Форматът е вернисаж — откриване с публиката и разглеждане на текстилни творби, които съчетават традиционна техника и съвременен поглед. Подходящ е за любители на текстилното изкуство и за хора, които търсят спокойна културна вечер. Източникът във Facebook не посочва входна такса, така че провери я в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="💻 Технологии, AI и обучения" data-name="pydata sofia &amp; dss meetup: how to create your first ai agent">
+  <div class="time" style="background:#1565c0">19:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge free">🆓 безплатно</span><span class="chip" style="border-color:#1565c0;color:#1565c0">💻 Технологии, AI и обучения</span></div>
+    <h3>PyData Sofia &amp; DSS Meetup: How to create your first AI agent</h3>
+    <p class="place">📍 SiteGround HQ — ул. „Олимпийска“ 6, София</p>
+    <p class="links"><a href="https://www.meetup.com/pydata-sofia/events/316960733/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/SiteGround+Olimpiyska+6+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Среща на PyData Sofia и DSS във вторник, 3 ноември, от 19:00 до 21:00 часа в SiteGround HQ, на която от нулата се изгражда AI агент с платформата Agno — агент, който анализира изображения, търси в мрежата и поддържа разговор. Лектор е Александър Игнатов, AI инженер в SiteGround. След презентацията има networking с напитки и храна от SiteGround и томбола с подаръци. Участието е безплатно, но регистрацията е задължителна. Подходяща е за Python разработчици и за хора, които искат практически първи стъпки в агентите. Часът е потвърден от страницата в Meetup (19:00, а не 17:00, както пишеше в бизнес каталога).</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="синелибри 2026: церемония по награждаване + „отечество“ с павел павликовски">
+  <div class="time" style="background:#ad1457">19:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Синелибри 2026: церемония по награждаване + „Отечество“ с Павел Павликовски</h3>
+    <p class="place">📍 Зала 1, НДК — пл. България 1, София</p>
+    <p class="links"><a href="https://kafene.bg/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/NDK+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Тържествената церемония по награждаване в конкурсите за най-добър пълнометражен игрален филм по литературна творба и най-добър документален филм се провежда във вторник, 3 ноември, от 19:00 часа в зала 1 на НДК, в присъствието на международното жури с Джим Шеридан, Якоб Йония, Мария Хурадо и Теодора Маркова. В надпреварата за майсторска екранизация влизат девет заглавия, сред които „Черното топче“ и „Паралелни истории“ на Асгар Фархади. Веднага след церемонията Павел Павликовски ще бъде удостоен с награда за приноса си към киното, а след прожекцията на „Отечество“ ще има разговор с режисьора и писателя Георги Господинов. Билети онлайн или от касите на НДК; цената не е посочена в източника.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎵 Музика, танци и парти" data-name="kovacs @ sofia live club">
+  <div class="time" style="background:#6a1b9a">20:00</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#6a1b9a;color:#6a1b9a">🎵 Музика, танци и парти</span></div>
+    <h3>KOVACS @ Sofia Live Club</h3>
+    <p class="place">📍 Sofia Live Club — пл. България 1, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/2089808161916379/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Sofia+Live+Club+NDK+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Нидерландската артистка KOVACS се завръща в София за първия си самостоятелен клубен концерт у нас във вторник, 3 ноември, от 20:00 часа в Sofia Live Club, след участието си на Sofia Live Festival през 2024 г. С плътния си, тъмен и дълбоко емоционален глас тя смесва соул, noir естетика и алтернативен поп в кинематографично шоу. Форматът е клубен концерт на живо, подходящ за фенове на соул и алтернативната поп музика. Цената не е посочена в описанието във Facebook — Grok посочи ~46–50 €, непотвърдено, затова провери преди покупка.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎵 Музика, танци и парти" data-name="first steps in kizomba — начало на 8-седмичен курс за начинаещи">
+  <div class="time" style="background:#6a1b9a">20:30</div>
+  <div class="body">
+    <div class="badges"><span class="chip" style="border-color:#6a1b9a;color:#6a1b9a">🎵 Музика, танци и парти</span></div>
+    <h3>First Steps in Kizomba — начало на 8-седмичен курс за начинаещи</h3>
+    <p class="place">📍 Танцово студио „Мушмула“ — София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1412370416947410/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Mushmula+dance+studio+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Начало на 8-седмичен курс по кизомба от самото начало във вторник, 3 ноември, от 20:30 часа в танцово студио „Мушмула“ — движение, връзка с партньора и основи, постепенно надграждани всяка седмица. Форматът е за хора, които още не са танцували кизомба, но им е любопитно защо танцът носи толкова запознанства, приятелства и пътувания. Подходящо е и като социален формат, защото кизомбата е танц по двойки с много нови контакти. Цената и точният адрес на студиото не са посочени в описанието — провери в събитието във Facebook.</p></details>
+  </div>
+</article>
+</section>
+<section class="day" data-date="2026-11-04">
+  <h2 class="day-title">📅 сряда, 4 ноември <span class="count">(7 събития)</span></h2>
+  
+<article class="card" data-cat="🏔️ Планински преходи и разходки" data-name="колоездачно барбекю на драгалевското езеро">
+  <div class="time" style="background:#2e7d32">08:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#2e7d32;color:#2e7d32">🏔️ Планински преходи и разходки</span></div>
+    <h3>Колоездачно барбекю на Драгалевското езеро</h3>
+    <p class="place">📍 Магазин „Фантастико“, Драгалевци — кв. Драгалевци, София (сборен пункт)</p>
+    <p class="links"><a href="https://mgergov.com/toraefimerida/dragalevskoto-ezero-barbeku-04-11-2026/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Fantastiko+Dragalevtsi+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Приятелската колоездачна среща с барбекю на Драгалевското езеро се провежда в сряда, 4 ноември, със сборен пункт в 08:00 часа пред магазин „Фантастико“ в квартал Драгалевци, София. Денят започва с баничка с айрянче за желаещите, след което групата кара с велосипеди до Драгалевското езеро, където се приготвя сьомга на преносимо газово барбекю. На финала има последна спирка за Княжевска минерална вода, с което завършва софийското приключение. Организаторът Мартин Гергов кани читателите на блога си, колоездачи и зрители на канала си, като изрично подчертава, че не е нужно да си член на платения му клуб — всеки, който го следи или просто иска да се запознае, е добре дошъл с велосипеда си. Това не е състезание: няма класиране, медали и награди за най-бърз участник, а почерпката е от организатора. Всеки, който ще присъства, трябва предварително да потвърди присъствието си, за да се планира количеството храна — начинът за потвърждение е посочен в статията на организатора.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="💻 Технологии, AI и обучения" data-name="pm summit 2026 — m.o.r.e: the power of value (многодневно)">
+  <div class="time" style="background:#1565c0">09:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#1565c0;color:#1565c0">💻 Технологии, AI и обучения</span></div>
+    <h3>PM Summit 2026 — M.O.R.E: The Power of Value (многодневно)</h3>
+    <p class="place">📍 Зала „Джон Атанасов“, Sofia Tech Park — Sofia Tech Park, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1266105575738070/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Sofia+Tech+Park+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">PM Summit 2026 е флагманското събитие на PMI Bulgaria Chapter и се провежда в сряда и четвъртък, 4–5 ноември 2026 г., в зала „Джон Атанасов“ в Sofia Tech Park, с начало в 09:00 часа на 4 ноември. Темата тази година е M.O.R.E: The Power of Value — как професионалистите в управлението на проекти могат да умножат успеха си чрез четири практики, първата от които е управление на възприятията и съгласуване на очакванията на заинтересованите страни. Форматът е двудневна професионална конференция с лекции и нетуъркинг, подходяща за ръководители на проекти и хора, които работят по проекти и искат практически подходи за стойност, а не само за изпълнение. Пълната програма и детайлите са на страницата на PMI Bulgaria. Източникът във Facebook не посочва цена на билетите и дали двата дни се посещават заедно или поотделно, така че провери ги в събитието преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎭 Култура" data-name="работилница фентъзи тефтер">
+  <div class="time" style="background:#ad1457">18:30</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#ad1457;color:#ad1457">🎭 Култура</span></div>
+    <h3>Работилница Фентъзи тефтер</h3>
+    <p class="place">📍 Канава Арт Студио — ул. Любен Каравелов 14, София (срещу „Червената къща“)</p>
+    <p class="links"><a href="https://www.facebook.com/events/2254715908653505/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Lyuben+Karavelov+14+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Работилницата „Фентъзи тефтер“ се провежда в сряда, 4 ноември, от 18:30 часа в Канава Арт Студио на ул. Любен Каравелов 14, срещу Центъра за култура и дебат „Червената къща“. По време на работилницата участниците трансформират обикновен тефтер, като украсяват кориците му и го превръщат в истински фентъзи тефтер. Форматът е практическа творческа работилница, подходяща за хора, които обичат ръчната работа, фентъзи естетиката и искат да си тръгнат с готов, лично украсен тефтер. Цената е 25 евро, а място се резервира предварително през сайта на организаторите или по имейл — самото отбелязване „ще присъствам“ във Facebook не е достатъчно за резервация. Според организаторите продължителността е от 18:30 до 21:30 часа, докато Facebook събитието посочва край 22:00 часа, така че потвърди крайния час при резервацията.</p></details>
+  </div>
+</article>
+<article class="card personal" data-cat="💻 Технологии, AI и обучения" data-name="ai networking event #22 | dss &lt;&gt; aie.f europe">
+  <div class="time" style="background:#1565c0">19:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge personal">⭐ МОЕ СЪБИТИЕ</span><span class="chip" style="border-color:#1565c0;color:#1565c0">💻 Технологии, AI и обучения</span></div>
+    <h3>AI Networking Event #22 | DSS &lt;&gt; AIE.F Europe</h3>
+    <p class="place">📍 Бартер къмюнити хъб — бул. Черни връх 47, София</p>
+    <p class="links"><a href="https://www.google.com/maps/search/Barter+Community+Hub+Cherni+Vrah+47+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Лично събитие от Google Calendar: AI Networking Event #22, организирано от DSS и AIE.F Europe, в сряда, 4 ноември, от 19:00 до 21:30 часа в Бартер къмюнити хъб на бул. Черни връх 47 в София. Участието му в това събитие е потвърдено предварително, а мястото е познатото пространство на общността в Хладилника. Форматът е мрежова вечер за хора, интересуващи се от изкуствен интелект — разговори, запознанства и обмен на идеи между участници от AI общността в София. Събитието е в пряка връзка с изричния му фокус върху AI събития, срещи и презентации, включително темите за агенти и LLM приложения. Календарният запис не посочва програма по часове, лектори и входна такса, така че провери ги при организаторите, ако ти трябват. Това е лично събитие и стои на хронологичното си място в деня, откроено като твое. Внимание: същата вечер в 19:30 часа онлайн е и уебинарът Java++ на DEV.BG — двете събития се застъпват във времето, но Java++ не е в календара и не е избирано от него, затова не се отчита като конфликт, а само като алтернатива.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="💻 Технологии, AI и обучения" data-name="java++: make java great again - dev.bg java">
+  <div class="time" style="background:#1565c0">19:30</div>
+  <div class="body">
+    <div class="badges"><span class="badge free">🆓 безплатно</span><span class="chip" style="border-color:#1565c0;color:#1565c0">💻 Технологии, AI и обучения</span></div>
+    <h3>Java++: Make Java Great Again - DEV.BG Java</h3>
+    <p class="place">📍 Online Zoom — Online</p>
+    <p class="links"><a href="https://dev.bg/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Online+Zoom" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">Уебинар на DEV.BG Java общността Java++: Make Java Great Again на 4 ноември от 19:30 ч. онлайн в Zoom, на български. Лектор е Найден Гочев, Java Engineer, Community Organizer и съорганизатор на конференция. Темите са в програмата на събитието на DEV.BG, а регистрацията става през линка в бюлетина на DEV.BG. Подходящ е за Java разработчици и хора, които следят Java екосистемата. Краят не е обявен в писмото, 21:00 е предположение. Източник: бюлетин events@dev.bg от 27.10.2026.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎵 Музика, танци и парти" data-name="henge live at club pave">
+  <div class="time" style="background:#6a1b9a">20:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#6a1b9a;color:#6a1b9a">🎵 Музика, танци и парти</span></div>
+    <h3>HENGE live at Club Pave</h3>
+    <p class="place">📍 Клуб Паве / Pave Club — Клуб Паве, София</p>
+    <p class="links"><a href="https://www.facebook.com/events/1005155861970577/" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Pave+Club+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">HENGE, определяни като извънземни веселяци, свирят на живо в сряда, 4 ноември, от 20:00 часа в Клуб Паве в София, според Facebook събитието. Групата представя музиката си като дар от далечни планети и от години радва публиката във Великобритания и Европа със scintillating живи изпълнения, отличени с наградата за най-добър лайв акт на Independent Festival Awards. Форматът е клубен концерт с театрална, космическа естетика, подходящ за фенове на психеделичния и космическия рок и за хора, които търсят нестандартно живо шоу. Внимание: Bandsintown посочва 19:30 часа за същия концерт, така че провери началния час в деня на събитието. Източникът във Facebook не посочва цена на билетите и краен час, така че провери ги преди да тръгнеш.</p></details>
+  </div>
+</article>
+<article class="card" data-cat="🎵 Музика, танци и парти" data-name="the veils @ sofia live club">
+  <div class="time" style="background:#6a1b9a">20:00</div>
+  <div class="body">
+    <div class="badges"><span class="badge new">🆕 ново</span><span class="chip" style="border-color:#6a1b9a;color:#6a1b9a">🎵 Музика, танци и парти</span></div>
+    <h3>The Veils @ Sofia Live Club</h3>
+    <p class="place">📍 Sofia Live Club — пл. България 1, София</p>
+    <p class="links"><a href="https://allevents.in/sofia/the-veils-sofia-live-club/200029740739058" target="_blank" rel="noopener">🔗 Събитието</a> <a href="https://www.google.com/maps/search/Sofia+Live+Club+NDK+Sofia" target="_blank" rel="noopener">🗺️ Карта</a></p>
+    <details><summary>📖 Виж пълното описание</summary><p class="desc">The Veils свирят за първи път в България в сряда, 4 ноември, в Sofia Live Club на пл. България 1, като концертът е част от есенната клубна програма на Sofia Live Festival и от европейското турне на групата в подкрепа на новия албум „Fragile World“. Врати отварят в 20:00 часа, а началото на концерта е в 21:30 часа, според анонса. Групата е представена като една от най-силните лайв групи на съвременната алтернативна сцена, с фронтмен англо-новозеландския певец и автор на песни Фин Андрюс. Форматът е клубен алт-рок концерт с кинематографично звучене, подходящ за фенове на инди и алтернативния рок. Билетите са били в продажба от 26 февруари на сайта на фестивала и от 27 февруари в мрежата на Eventim, като ранните билети са били 20 евро, а в деня на събитието — 30 евро, според анонса, така че провери актуалната цена преди покупка.</p></details>
+  </div>
+</article>
+</section>
+</main>
+<footer>Генерирано на 31 октомври 2026 г. вечерта · Вечерен дайджест, прозорец утре + 3 дни (без днес) · AI проверка: Grok (31-ви е нечетна дата; изглежда като отговор на Grok AI, не на локален бот)</footer>
+<script>
+let activeCat = '';
+const activeDays = new Set([...document.querySelectorAll('.day')].map(d => d.dataset.date));
+function filterCat(btn, cat) {
+  activeCat = cat;
+  document.querySelectorAll('.fchip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+function toggleDay(btn, date) {
+  if (activeDays.has(date)) { activeDays.delete(date); btn.classList.remove('active'); }
+  else { activeDays.add(date); btn.classList.add('active'); }
+  applyFilters();
+}
+function allDays(show) {
+  document.querySelectorAll('.dchip').forEach(b => {
+    if (show) { activeDays.add(b.dataset.day); b.classList.add('active'); }
+    else { activeDays.delete(b.dataset.day); b.classList.remove('active'); }
+  });
+  applyFilters();
+}
+function applyFilters() {
+  const q = document.getElementById('q').value.toLowerCase();
+  document.querySelectorAll('.card').forEach(c => {
+    const okCat = !activeCat || c.dataset.cat === activeCat;
+    const okQ = !q || (c.dataset.name + ' ' + c.textContent).toLowerCase().includes(q);
+    c.style.display = (okCat && okQ) ? '' : 'none';
+  });
+  document.querySelectorAll('.day').forEach(d => {
+    const any = [...d.querySelectorAll('.card')].some(c => c.style.display !== 'none');
+    d.style.display = (activeDays.has(d.dataset.date) && any) ? '' : 'none';
+  });
+}
+function toggleAll(open) {
+  document.querySelectorAll('details').forEach(d => d.open = open);
+}
+</script>
+</body>
+</html>

@@ -414,7 +414,7 @@ def podari_site_sections(site):
     ct = site.get("contacts", {})
     if ct:
         parts.append(
-            '<section id="pv-contacts"><div class="container"><article class="card"><h3>Контакти</h3>'
+            '<section id="pv-contacts"><div class="container"><article class="card"><h2>Контакти</h2>'
             '<p class="meta">%s · <a href="mailto:%s">%s</a> · %s · %s · '
             '<a href="%s" target="_blank" rel="noopener">podarivreme.org</a></p>'
             '<p class="meta">Въпроси към фондацията: <a href="mailto:%s">%s</a></p>'

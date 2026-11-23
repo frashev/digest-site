@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>%s — Моите дайджести</title>
+<meta name="description" content="Новини, събития и справки — обновява се автоматично.">
+<meta name="theme-color" content="#FBF9F3">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="alternate" type="application/rss+xml" title="Моите дайджести — Новини" href="feed.xml">
+<style>
+:root{
+  --bg:#FBF9F3; --surface:#FFFFFF; --surface-2:#F5F1E8; --surface-3:#F2EDE8;
+  --ink:#2B2118; --ink-soft:#3D3226; --muted:#5F5E5C;
+  --border:#E8E4DA; --border-strong:#DBD7CD;
+  --accent:#9C493D; --accent-dark:#7A3B2B; --accent-soft:#FBEADD;
+  --terra:#CE6246; --highlight:#F7DC1F; --highlight-soft:#FCF9E7;
+  --sage:#5F7263; --focus:#1D4ED8;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px; --r-pill:999px;
+  --shadow-card:0 1px 2px rgba(43,33,24,.05),0 8px 24px rgba(43,33,24,.06);
+  --shadow-lift:0 2px 4px rgba(43,33,24,.06),0 16px 32px rgba(43,33,24,.10);
+  --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--font-sans);font-size:17px;line-height:1.6;background:var(--bg);color:var(--ink)}
+h1,h2{font-family:var(--font-serif);color:var(--ink-soft)}
+a{color:var(--accent);font-weight:600}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.skip-link{position:absolute;left:-999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 12px 0;z-index:100}
+.skip-link:focus{left:0;color:#fff}
+.container{max-width:1080px;margin:0 auto;padding:0 16px}
+.site-header{position:sticky;top:0;z-index:50;background:rgba(251,249,243,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.header-row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);min-width:0}
+.brand img{width:32px;height:32px;flex:none}
+.brand-name{font-family:var(--font-serif);font-size:20px;font-weight:600;white-space:nowrap}
+.brand-date{color:var(--muted);font-size:13px;white-space:nowrap}
+.nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 10px;-webkit-overflow-scrolling:touch;
+  -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 88%,transparent 100%)}
+.nav::-webkit-scrollbar{display:none}
+.nav a{flex:none;padding:8px 14px;border-radius:var(--r-pill);color:var(--muted);text-decoration:none;font-size:15px;font-weight:500;min-height:36px;display:inline-flex;align-items:center}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.page-hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
+.page-hero .kicker{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.page-hero h1{font-size:clamp(26px,5vw,34px);line-height:1.15;margin:8px 0 6px;letter-spacing:-.01em}
+.page-hero p.lede{color:var(--muted);margin:6px 0 0}
+.hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
+.hero .kicker{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.hero h1{font-size:clamp(28px,6vw,40px);line-height:1.1;margin:8px 0 6px;letter-spacing:-.01em}
+.hero h1 em{font-style:italic}
+.hero .hl{background:linear-gradient(transparent 55%,var(--highlight) 55%,var(--highlight) 92%,transparent 92%);padding:0 2px}
+.hero p.lede{color:var(--muted);margin:6px 0 16px}
+.hero ul{margin:0 0 18px;padding-left:20px}
+.hero li{margin:5px 0}
+.btn-primary{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:12px 22px;border-radius:var(--r-pill);font-size:15px;font-weight:600}
+.btn-primary:hover{background:var(--accent-dark)}
+.btn-ghost{display:inline-block;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);text-decoration:none;padding:10px 20px;border-radius:var(--r-pill);font-size:15px;font-weight:600}
+main section{padding:32px 0 8px;scroll-margin-top:84px}
+main section h2{font-size:clamp(24px,3vw,30px);line-height:1.15;margin:0 0 4px}
+.section-intro{color:var(--muted);margin:0 0 20px;font-size:15px}
+.section-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.section-head a{font-size:14px;white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:20px}
+.card h3{margin:0 0 6px;font-size:19px;line-height:1.3}
+.card .meta{color:var(--muted);font-size:13px;margin:0 0 10px}
+.card ul{margin:0 0 14px;padding-left:20px}
+.card li{margin:4px 0;font-size:15px}
+.card:hover{box-shadow:var(--shadow-lift)}
+.card .icon{font-size:26px}
+.searchbar{padding:14px 0 4px}
+.searchbar input{width:100%;padding:12px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font-size:16px;font-family:var(--font-sans);background:var(--surface);color:var(--ink)}
+.count-line{color:var(--muted);font-size:13px;margin:8px 0 0;min-height:18px}
+details.edition{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);margin:0 0 12px;overflow:hidden}
+details.edition summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-weight:600}
+details.edition summary::-webkit-details-marker{display:none}
+details.edition summary .chev{margin-left:auto;color:var(--muted);transition:transform 150ms ease}
+details.edition[open ] summary .chev{transform:rotate(90deg)}
+details.edition .ed-part{font-size:15px}
+details.edition .ed-date{color:var(--muted);font-weight:500;font-size:14px}
+details.edition .ed-meta{color:var(--muted);font-weight:500;font-size:14px}
+.ed-body{border-top:1px solid var(--border)}
+.ed-body iframe{width:100%;border:0;display:block;background:var(--surface);min-height:320px}
+.frame-note{font-size:13px;color:var(--muted);margin:0 0 12px}
+.frame-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);overflow:hidden}
+.frame-wrap iframe{width:100%;border:0;display:block;background:var(--surface);min-height:320px}
+.archive-month{margin:0 0 12px}
+.archive-month summary{cursor:pointer;font-weight:600;padding:12px 4px;font-size:16px}
+.archive-month summary::-webkit-details-marker{display:none}
+.inline-content .wrap{max-width:none;margin:0;padding:0}
+.inline-content h2{font-size:20px;margin:0 0 10px}
+.inline-content .day{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin:0 0 12px}
+.inline-content .day h2{font-size:15px;margin:0 0 8px;color:var(--accent);font-family:var(--font-sans)}
+.inline-content .item{margin:6px 0}
+.inline-content .time{color:var(--muted);font-size:13px}
+.inline-content .note{font-size:13px;color:var(--muted)}
+.inline-content .check{background:var(--highlight-soft)}
+.inline-content ul{margin:6px 0 0;padding-left:20px}
+.inline-content li{margin:4px 0}
+.inline-content table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.inline-content th,.inline-content td{text-align:left;padding:10px 12px;font-size:14px;border-bottom:1px solid var(--border);vertical-align:top}
+.inline-content th{background:var(--surface-2);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.inline-content tr:last-child td{border-bottom:none}
+.inline-content .warn{color:var(--accent);font-weight:600}
+.inline-content .dow{color:var(--muted);font-size:12px}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:16px 18px;margin:0 0 12px}
+.result-card h3{margin:0 0 4px;font-size:17px}
+.result-card .meta{color:var(--muted);font-size:13px;margin:0 0 6px}
+.result-card p{margin:0;font-size:14px;color:var(--ink-soft)}
+footer{border-top:1px solid var(--border);padding:28px 0 40px;color:var(--muted);font-size:14px;margin-top:32px}
+footer a{font-weight:600}
+footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
+.no-results{color:var(--muted);padding:20px 0}
+@media (min-width:900px){
+  main section{padding:48px 0 8px}
+  .hero,.page-hero{padding:32px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Към съдържанието</a>
+<header class="site-header"><div class="container"><div class="header-row"><a class="brand" href="index.html"><img src="favicon.svg" alt="" width="32" height="32"><span class="brand-name">Моите дайджести</span></a><span class="brand-date">понеделник, 23 ноември 2026</span></div><nav class="nav" aria-label="Раздели"><a href="index.html">Начало</a><a href="news.html" aria-current="page">Новини</a><a href="events.html">Събития</a><a href="week.html">Седмицата</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html">RADAR</a><a href="cars.html">Коли</a><a href="aiplan.html">AI план</a><a href="subs.html">Абонаменти</a><a href="search.html">🔍 Търсене</a></nav></div></header>
+<main id="main"><div class="container" id="top"><div class="page-hero"><p class="kicker">Новини</p><h1>Новини — сутрин, следобед и вечер</h1><p class="lede">39 издания · чети на място, без да отваряш отделни файлове. Всяко издание има търсене и филтри вътре.</p></div><div class="searchbar" role="search"><input id="q" type="search" placeholder="Търси в новините…" aria-label="Търси в новините"><p class="count-line" id="count" aria-live="polite"></p><p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p></div></div><section aria-labelledby="today-h"><div class="container"><h2 id="today-h">23.11.2026, понеделник</h2><details class="edition" id="ed-novini-2026-11-23-morning" data-kind="morning" data-search="23.11.2026 понеделник сутрин morning Claude помогна да се докаже хипотезата на Риман — най-известният нерешен проблем в математиката Anthropic приключи IPO-то си (обновление) Акциите на Anthropic паднаха с 9% на втория ден, Nvidia се срина заради проверка на SEC" open><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">23.11.2026, понеделник</span><span class="ed-meta">70 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-23-morning.html" data-autosize loading="lazy" title="Новини 23.11.2026 — сутрин"></iframe></div></details><h3 style="margin:28px 0 12px;font-family:var(--font-serif);font-size:20px">Архив</h3><details class="archive-month"><summary>ноември 2026 · 38 издания</summary><details class="edition" id="ed-novini-2026-11-22-evening" data-kind="evening" data-search="22.11.2026 неделя вечер evening Акциите на Anthropic скочиха с 34% при дебюта си на борсата (обновление) Claude вече може да се включва в Google Meet разговори Приложението на Gemini за Mac вече клика и пише вместо потребителя"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">22.11.2026, неделя</span><span class="ed-meta">93 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-22-evening.html" data-autosize loading="lazy" title="Новини 22.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-22-afternoon" data-kind="afternoon" data-search="22.11.2026 неделя следобед afternoon Акциите на Anthropic скочиха с 34% при дебюта си на борсата (обновление) Claude вече може да се включва в Google Meet разговори Приложението на Gemini за Mac вече клика и пише вместо потребителя"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">22.11.2026, неделя</span><span class="ed-meta">88 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-22-afternoon.html" data-autosize loading="lazy" title="Новини 22.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-22-morning" data-kind="morning" data-search="22.11.2026 неделя сутрин morning Акциите на Anthropic скочиха с 34% при дебюта си на борсата (обновление) Claude вече може да се включва в Google Meet разговори Приложението на Gemini за Mac вече клика и пише вместо потребителя"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">22.11.2026, неделя</span><span class="ed-meta">79 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-22-morning.html" data-autosize loading="lazy" title="Новини 22.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-21-evening" data-kind="evening" data-search="21.11.2026 събота вечер evening Google пусна Gemini 4 Neon — нов модел между Carbon и Hydrogen Anthropic определи цената на IPO-то си — $83 за акция, търговията започва днес (обновление) OpenAI: агентите вече вършат сами 46% от 2–4-часовите изследователски задачи"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">21.11.2026, събота</span><span class="ed-meta">104 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-21-evening.html" data-autosize loading="lazy" title="Новини 21.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-21-afternoon" data-kind="afternoon" data-search="21.11.2026 събота следобед afternoon Google пусна Gemini 4 Neon — нов модел между Carbon и Hydrogen Anthropic определи цената на IPO-то си — $83 за акция, търговията започва днес (обновление) OpenAI: агентите вече вършат сами 46% от 2–4-часовите изследователски задачи"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">21.11.2026, събота</span><span class="ed-meta">95 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-21-afternoon.html" data-autosize loading="lazy" title="Новини 21.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-21-morning" data-kind="morning" data-search="21.11.2026 събота сутрин morning Google пусна Gemini 4 Neon — нов модел между Carbon и Hydrogen Anthropic определи цената на IPO-то си — $83 за акция, търговията започва днес (обновление) OpenAI: агентите вече вършат сами 46% от 2–4-часовите изследователски задачи"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">21.11.2026, събота</span><span class="ed-meta">84 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-21-morning.html" data-autosize loading="lazy" title="Новини 21.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-20-evening" data-kind="evening" data-search="20.11.2026 петък вечер evening OpenAI пусна GPT-6.2 Astra и Sol — по-евтини и с праг за самоускорение Microsoft пусна MAI Code 2 в GitHub Copilot и нов контролен слой за агенти Google разширява Gemini Tasks — агенти, които звънят и купуват вместо потребителя"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">20.11.2026, петък</span><span class="ed-meta">110 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-20-evening.html" data-autosize loading="lazy" title="Новини 20.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-20-afternoon" data-kind="afternoon" data-search="20.11.2026 петък следобед afternoon OpenAI пусна GPT-6.2 Astra и Sol — по-евтини и с праг за самоускорение Microsoft пусна MAI Code 2 в GitHub Copilot и нов контролен слой за агенти Google разширява Gemini Tasks — агенти, които звънят и купуват вместо потребителя"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">20.11.2026, петък</span><span class="ed-meta">100 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-20-afternoon.html" data-autosize loading="lazy" title="Новини 20.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-20-morning" data-kind="morning" data-search="20.11.2026 петък сутрин morning OpenAI пусна GPT-6.2 Astra и Sol — по-евтини и с праг за самоускорение Microsoft пусна MAI Code 2 в GitHub Copilot и нов контролен слой за агенти Google разширява Gemini Tasks — агенти, които звънят и купуват вместо потребителя"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">20.11.2026, петък</span><span class="ed-meta">92 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-20-morning.html" data-autosize loading="lazy" title="Новини 20.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-19-evening" data-kind="evening" data-search="19.11.2026 четвъртък вечер evening Anthropic определи цена за IPO-то си — 70–78 долара за акция, при оценка около 1,4 трлн. долара Калифорния съди OpenAI заради автономни кибератаки при тестове Claude качи AMD чипове за около 3 дни — работа, която преди отнемала месеци"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">19.11.2026, четвъртък</span><span class="ed-meta">108 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-19-evening.html" data-autosize loading="lazy" title="Новини 19.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-19-afternoon" data-kind="afternoon" data-search="19.11.2026 четвъртък следобед afternoon Anthropic определи цена за IPO-то си — 70–78 долара за акция, при оценка около 1,4 трлн. долара Калифорния съди OpenAI заради автономни кибератаки при тестове Claude качи AMD чипове за около 3 дни — работа, която преди отнемала месеци"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">19.11.2026, четвъртък</span><span class="ed-meta">106 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-19-afternoon.html" data-autosize loading="lazy" title="Новини 19.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-19-morning" data-kind="morning" data-search="19.11.2026 четвъртък сутрин morning Anthropic определи цена за IPO-то си — 70–78 долара за акция, при оценка около 1,4 трлн. долара Калифорния съди OpenAI заради автономни кибератаки при тестове Claude качи AMD чипове за около 3 дни — работа, която преди отнемала месеци"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">19.11.2026, четвъртък</span><span class="ed-meta">92 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-19-morning.html" data-autosize loading="lazy" title="Новини 19.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-18-evening" data-kind="evening" data-search="18.11.2026 сряда вечер evening OpenAI и Anthropic ще купят или наемат 26 млн. чипа TPU на Google през 2028–2029 г. Alibaba представи официално новия си флагман Qwen4-Max Агентите на OpenAI пробиха собствената ѝ изследователска инфраструктура по време на изпит"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">18.11.2026, сряда</span><span class="ed-meta">100 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-18-evening.html" data-autosize loading="lazy" title="Новини 18.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-18-afternoon" data-kind="afternoon" data-search="18.11.2026 сряда следобед afternoon OpenAI и Anthropic ще купят или наемат 26 млн. чипа TPU на Google през 2028–2029 г. Alibaba представи официално новия си флагман Qwen4-Max Агентите на OpenAI пробиха собствената ѝ изследователска инфраструктура по време на изпит"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">18.11.2026, сряда</span><span class="ed-meta">97 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-18-afternoon.html" data-autosize loading="lazy" title="Новини 18.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-18-morning" data-kind="morning" data-search="18.11.2026 сряда сутрин morning OpenAI и Anthropic ще купят или наемат 26 млн. чипа TPU на Google през 2028–2029 г. Alibaba представи официално новия си флагман Qwen4-Max Агентите на OpenAI пробиха собствената ѝ изследователска инфраструктура по време на изпит"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">18.11.2026, сряда</span><span class="ed-meta">81 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-18-morning.html" data-autosize loading="lazy" title="Новини 18.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-17-evening" data-kind="evening" data-search="17.11.2026 вторник вечер evening llama.cpp стигна до версия 1.0.0 със стабилен публичен API България спира доставките на оръжия за Украйна от армейските запаси До понеделник фирмите могат да коригират авансовите вноски за корпоративен данък"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">17.11.2026, вторник</span><span class="ed-meta">83 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-17-evening.html" data-autosize loading="lazy" title="Новини 17.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-17-afternoon" data-kind="afternoon" data-search="17.11.2026 вторник следобед afternoon llama.cpp стигна до версия 1.0.0 със стабилен публичен API България спира доставките на оръжия за Украйна от армейските запаси До понеделник фирмите могат да коригират авансовите вноски за корпоративен данък"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">17.11.2026, вторник</span><span class="ed-meta">78 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-17-afternoon.html" data-autosize loading="lazy" title="Новини 17.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-17-morning" data-kind="morning" data-search="17.11.2026 вторник сутрин morning llama.cpp стигна до версия 1.0.0 със стабилен публичен API България спира доставките на оръжия за Украйна от армейските запаси До понеделник фирмите могат да коригират авансовите вноски за корпоративен данък"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">17.11.2026, вторник</span><span class="ed-meta">67 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-17-morning.html" data-autosize loading="lazy" title="Новини 17.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-16-evening" data-kind="evening" data-search="16.11.2026 понеделник вечер evening Claude Fable 5.2 оглави независимата класация за AI модели OpenAI ограничи кибермодела GPT-6 Cyber до одобрени клиенти по сигурността Anthropic публикува страницата за IPO — тикер ANT, ценообразуване около 18 ноември"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">16.11.2026, понеделник</span><span class="ed-meta">81 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-16-evening.html" data-autosize loading="lazy" title="Новини 16.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-16-afternoon" data-kind="afternoon" data-search="16.11.2026 понеделник следобед afternoon Claude Fable 5.2 оглави независимата класация за AI модели OpenAI ограничи кибермодела GPT-6 Cyber до одобрени клиенти по сигурността Anthropic публикува страницата за IPO — тикер ANT, ценообразуване около 18 ноември"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">16.11.2026, понеделник</span><span class="ed-meta">74 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-16-afternoon.html" data-autosize loading="lazy" title="Новини 16.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-16-morning" data-kind="morning" data-search="16.11.2026 понеделник сутрин morning Claude Fable 5.2 оглави независимата класация за AI модели OpenAI ограничи кибермодела GPT-6 Cyber до одобрени клиенти по сигурността Anthropic публикува страницата за IPO — тикер ANT, ценообразуване около 18 ноември"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">16.11.2026, понеделник</span><span class="ed-meta">66 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-16-morning.html" data-autosize loading="lazy" title="Новини 16.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-15-evening" data-kind="evening" data-search="15.11.2026 неделя вечер evening Дженсън Хуанг подаде оставка като шеф на Nvidia НПО съдят OpenAI, Google, Anthropic, Meta и SpaceX заради фронтиерни модели OpenAI пуска Daybreak Red Team и Daybreak Defense Factory"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">15.11.2026, неделя</span><span class="ed-meta">84 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-15-evening.html" data-autosize loading="lazy" title="Новини 15.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-15-afternoon" data-kind="afternoon" data-search="15.11.2026 неделя следобед afternoon Дженсън Хуанг подаде оставка като шеф на Nvidia НПО съдят OpenAI, Google, Anthropic, Meta и SpaceX заради фронтиерни модели OpenAI пуска Daybreak Red Team и Daybreak Defense Factory"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">15.11.2026, неделя</span><span class="ed-meta">77 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-15-afternoon.html" data-autosize loading="lazy" title="Новини 15.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-15-morning" data-kind="morning" data-search="15.11.2026 неделя сутрин morning Дженсън Хуанг подаде оставка като шеф на Nvidia НПО съдят OpenAI, Google, Anthropic, Meta и SpaceX заради фронтиерни модели OpenAI пуска Daybreak Red Team и Daybreak Defense Factory"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">15.11.2026, неделя</span><span class="ed-meta">69 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-15-morning.html" data-autosize loading="lazy" title="Новини 15.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-14-evening" data-kind="evening" data-search="14.11.2026 събота вечер evening Adobe пуска локален MCP за Photoshop, Illustrator, Premiere Pro и After Effects OpenAI: агенти за оценка са получили неоторизиран достъп до изследователска инфраструктура Австралия създава регулатор за безопасност на AI"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">14.11.2026, събота</span><span class="ed-meta">103 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-14-evening.html" data-autosize loading="lazy" title="Новини 14.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-14-afternoon" data-kind="afternoon" data-search="14.11.2026 събота следобед afternoon Adobe пуска локален MCP за Photoshop, Illustrator, Premiere Pro и After Effects OpenAI: агенти за оценка са получили неоторизиран достъп до изследователска инфраструктура Австралия създава регулатор за безопасност на AI"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">14.11.2026, събота</span><span class="ed-meta">100 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-14-afternoon.html" data-autosize loading="lazy" title="Новини 14.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-14-morning" data-kind="morning" data-search="14.11.2026 събота сутрин morning Adobe пуска локален MCP за Photoshop, Illustrator, Premiere Pro и After Effects OpenAI: агенти за оценка са получили неоторизиран достъп до изследователска инфраструктура Австралия създава регулатор за безопасност на AI"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">14.11.2026, събота</span><span class="ed-meta">87 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-14-morning.html" data-autosize loading="lazy" title="Новини 14.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-13-evening" data-kind="evening" data-search="13.11.2026 петък вечер evening Anthropic тръгна към борсата — роудшоу за IPO при оценка до 1,4 трлн. долара Anthropic пусна офис пакет в Claude — Sheets, Meetings и Whiteboards DeepMind доказа математически сигурността на Signal"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">13.11.2026, петък</span><span class="ed-meta">104 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-13-evening.html" data-autosize loading="lazy" title="Новини 13.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-13-afternoon" data-kind="afternoon" data-search="13.11.2026 петък следобед afternoon Anthropic тръгна към борсата — роудшоу за IPO при оценка до 1,4 трлн. долара Anthropic пусна офис пакет в Claude — Sheets, Meetings и Whiteboards DeepMind доказа математически сигурността на Signal"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">13.11.2026, петък</span><span class="ed-meta">102 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-13-afternoon.html" data-autosize loading="lazy" title="Новини 13.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-13-morning" data-kind="morning" data-search="13.11.2026 петък сутрин morning Anthropic тръгна към борсата — роудшоу за IPO при оценка до 1,4 трлн. долара Anthropic пусна офис пакет в Claude — Sheets, Meetings и Whiteboards DeepMind доказа математически сигурността на Signal"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">13.11.2026, петък</span><span class="ed-meta">91 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-13-morning.html" data-autosize loading="lazy" title="Новини 13.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-12-evening" data-kind="evening" data-search="12.11.2026 четвъртък вечер evening Anthropic пусна Claude Fable 5.2 и Mythos 5.2 Meta пусна Muse Ember — най-малкия си модел (от X/Grok) Google представи TPU 8tx и TPU 8i Max"><summary><span class="ed-part">🌙 вечер</span><span class="ed-date">12.11.2026, четвъртък</span><span class="ed-meta">116 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-12-evening.html" data-autosize loading="lazy" title="Новини 12.11.2026 — вечер"></iframe></div></details><details class="edition" id="ed-novini-2026-11-12-afternoon" data-kind="afternoon" data-search="12.11.2026 четвъртък следобед afternoon Anthropic пусна Claude Fable 5.2 и Mythos 5.2 Meta пусна Muse Ember — най-малкия си модел (от X/Grok) Google представи TPU 8tx и TPU 8i Max"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">12.11.2026, четвъртък</span><span class="ed-meta">106 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-12-afternoon.html" data-autosize loading="lazy" title="Новини 12.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-12-morning" data-kind="morning" data-search="12.11.2026 четвъртък сутрин morning Anthropic пусна Claude Fable 5.2 и Mythos 5.2 Meta пусна Muse Ember — най-малкия си модел (от X/Grok) Google представи TPU 8tx и TPU 8i Max"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">12.11.2026, четвъртък</span><span class="ed-meta">93 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-12-morning.html" data-autosize loading="lazy" title="Новини 12.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-11-afternoon" data-kind="afternoon" data-search="11.11.2026 сряда следобед afternoon Anthropic поръча газови генератори за 3,4 млрд. долара Тръмп: не възразявам срещу предпазни мерки за AI Apple: агентска Siri още през 2027 г."><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">11.11.2026, сряда</span><span class="ed-meta">134 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-11-afternoon.html" data-autosize loading="lazy" title="Новини 11.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-11-morning" data-kind="morning" data-search="11.11.2026 сряда сутрин morning Anthropic поръча газови генератори за 3,4 млрд. долара Тръмп: не възразявам срещу предпазни мерки за AI Apple: агентска Siri още през 2027 г."><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">11.11.2026, сряда</span><span class="ed-meta">123 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-11-morning.html" data-autosize loading="lazy" title="Новини 11.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-10-afternoon" data-kind="afternoon" data-search="10.11.2026 вторник следобед afternoon Anthropic започва роудшоу за борсовото си листване — оценката пада към 1–1,5 трлн. долара (обновление) Meta спря безсрочно новите търговски условия за AI обучение (обновление) Nvidia иска следене на местоположението на чиповете от облачни партньори в Югоизточна Азия"><summary><span class="ed-part">🌆 следобед</span><span class="ed-date">10.11.2026, вторник</span><span class="ed-meta">134 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-10-afternoon.html" data-autosize loading="lazy" title="Новини 10.11.2026 — следобед"></iframe></div></details><details class="edition" id="ed-novini-2026-11-10-morning" data-kind="morning" data-search="10.11.2026 вторник сутрин morning Anthropic започва роудшоу за борсовото си листване — оценката пада към 1–1,5 трлн. долара (обновление) Meta спря безсрочно новите търговски условия за AI обучение (обновление) Nvidia иска следене на местоположението на чиповете от облачни партньори в Югоизточна Азия"><summary><span class="ed-part">🌅 сутрин</span><span class="ed-date">10.11.2026, вторник</span><span class="ed-meta">118 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-10-morning.html" data-autosize loading="lazy" title="Новини 10.11.2026 — сутрин"></iframe></div></details><details class="edition" id="ed-novini-2026-11-07-10" data-kind="review" data-search="07.11.2026 събота обзор review DeepMind: AI агенти откриха две слабости в стария 1024-битов RSA Alibaba готви серията Qwen4 — флагман, Plus, Flash и модел за домашен компютър Anthropic даде на компаниите вето върху отговорите на Claude"><summary><span class="ed-part">📰 обзор</span><span class="ed-date">07–10.11.2026 · обзор</span><span class="ed-meta">161 новини</span><span class="chev">›</span></summary><div class="ed-body"><iframe data-src="novini-2026-11-07-10.html" data-autosize loading="lazy" title="Новини 07.11.2026 — обзор"></iframe></div></details></details></div></section></main>
+<footer><div class="container"><div class="foot-nav"><a href="index.html">Начало</a><a href="news.html" aria-current="page">Новини</a><a href="events.html">Събития</a><a href="week.html">Седмицата</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html">RADAR</a><a href="cars.html">Коли</a><a href="aiplan.html">AI план</a><a href="subs.html">Абонаменти</a><a href="search.html">🔍 Търсене</a></div><p>Последно обновяване: 23.11.2026 08:56 · Обновява се автоматично на всеки час.</p><p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p></div></footer>
+<script>
+// Менюто се скролва до активната страница
+(function(){
+  var cur = document.querySelector('.nav a[aria-current="page"]');
+  if (cur) cur.scrollIntoView({inline:'center', block:'nearest'});
+})();
+// Зареждане на iframe при първо отваряне на <details>
+(function(){
+  function loadFrame(details){
+    var f = details.querySelector('iframe[data-src]');
+    if (f && !f.src) f.src = f.dataset.src;
+  }
+  document.querySelectorAll('details.edition').forEach(function(d){
+    if (d.open) loadFrame(d);
+    d.addEventListener('toggle', function(){ if (d.open) { loadFrame(d); setTimeout(fitIframes, 300); } });
+  });
+  document.querySelectorAll('[data-open-details]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var d = document.getElementById(btn.dataset.openDetails);
+      if (d && !d.open) { d.open = true; loadFrame(d); }
+    });
+  });
+})();
+// Дълбок линк към издание/дайджест: отваря го при зареждане
+(function(){
+  var h = location.hash && location.hash.slice(1);
+  if (!h) return;
+  var el = document.getElementById(h);
+  if (el && el.tagName === 'DETAILS') {
+    el.open = true;
+    var f = el.querySelector('iframe[data-src]');
+    if (f && !f.src) f.src = f.dataset.src;
+    setTimeout(function(){ el.scrollIntoView({block:'start'}); fitIframes(); }, 350);
+  }
+})();
+// Търсене на страницата (новини/събития): филтрира картите по data-search
+(function(){
+  var q = document.getElementById('q');
+  if (!q) return;
+  var countEl = document.getElementById('count');
+  var noRes = document.getElementById('no-results');
+  function apply(){
+    var needle = (q.value || '').trim().toLowerCase();
+    var visible = 0, total = 0;
+    document.querySelectorAll('[data-search]').forEach(function(card){
+      total++;
+      var hit = !needle || card.dataset.search.toLowerCase().indexOf(needle) !== -1;
+      card.hidden = !hit;
+      if (hit) visible++;
+    });
+    document.querySelectorAll('.archive-month').forEach(function(m){
+      var anyVisible = false;
+      m.querySelectorAll('[data-search]').forEach(function(c){ if (!c.hidden) anyVisible = true; });
+      m.hidden = !anyVisible && needle !== '';
+    });
+    if (countEl) countEl.textContent = needle ? ('Намерени: ' + visible + ' от ' + total) : '';
+    if (noRes) noRes.hidden = visible > 0 || !needle;
+  }
+  q.addEventListener('input', apply);
+})();
+// Автоматична височина на вградените страници: долният ръб на последния
+// видим елемент в тялото (не scrollHeight — той брои и празното отдолу)
+function fitIframes(){
+  document.querySelectorAll('iframe[data-autosize]').forEach(function(f){
+    try {
+      if (!f.contentWindow || !f.contentDocument || !f.contentDocument.body) return;
+      var doc = f.contentDocument, view = doc.defaultView, best = 0;
+      var kids = doc.body.children;
+      for (var i = 0; i < kids.length; i++) {
+        var el = kids[i];
+        if (view.getComputedStyle(el).display === 'none') continue;
+        var r = el.getBoundingClientRect();
+        if (!r.height && !r.width) continue;
+        var bottom = r.top + view.scrollY + r.height;
+        if (bottom > best) best = bottom;
+      }
+      var h = best > 100 ? best : doc.body.scrollHeight;
+      if (h > 100) f.style.height = (h + 8) + 'px';
+    } catch (e) { /* cross-origin или още не е зареден — пропускаме */ }
+  });
+}
+window.addEventListener('load', function(){ fitIframes(); setInterval(fitIframes, 900); });
+window.addEventListener('resize', fitIframes);
+</script>
+</body>
+</html>

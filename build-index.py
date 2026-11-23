@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
-# build-index.py — генерира index.html + feed.xml за сайта с дайджестите.
+# build-index.py — генерира МНОГОСТРАНИЧЕН сайт с дайджестите.
 # Дизайн: mobile-first, топла хартия (#FBF9F3), един тухлен акцент (#9C493D),
-# лепкаво меню с хапчета + scrollspy, секции с фиксиран ред. Съдържанието се
-# чете НА СТРАНИЦАТА: малките файлове без скриптове се вграждат директно,
-# изданията (новини/дайджест) и файловете със скриптове се показват във
-# вграден iframe с автоматична височина (same-origin измерване от родителя).
-# Никой не отваря отделни HTML файлове — архивът се разгръща на място
-# (data-src се зарежда при първо отваряне). Без външни зависимости.
-# Пуска се от publish.ps1 на PC-то. Изход: index.html, feed.xml.
+# лепкаво меню с къси етикети (активната страница е маркирана, менюто се
+# скролва до нея, fade маска показва, че има още). Всяка страница е отделна:
+# index (начало), news (новини), events (събития), week, vreme, podari,
+# radar, cars, aiplan, subs, scout (ако има), search (глобално търсене).
+# Съдържанието се чете НА СТРАНИЦАТА: малките файлове без скриптове се
+# вграждат директно, изданията (новини/дайджест) и файловете със скриптове
+# се показват във вграден iframe с автоматична височина — височината се мери
+# по долния ръб на последния видим елемент (не по scrollHeight, за да няма
+# празна ивица под съдържанието). Архивът се разгръща на място (data-src се
+# зарежда при първо отваряне). Глобалното търсене чете search.json.
+# Без външни зависимости. Пуска се от publish.ps1 на PC-то.
+# Изход: index.html, news.html, events.html, week.html, vreme.html,
+# podari.html, radar.html, cars.html, aiplan.html, subs.html, scout.html,
+# search.html, search.json, feed.xml.
 import html as htmlmod
+import json
 import os
 import re
 import sys
@@ -26,6 +34,13 @@ PART_LABEL = {"morning": "сутрин", "afternoon": "следобед", "eveni
               "review": "обзор"}
 PART_ORDER = {"morning": 0, "afternoon": 1, "evening": 2, "review": 3}
 PART_EMOJI = {"morning": "🌅", "afternoon": "🌆", "evening": "🌙", "review": "📰"}
+
+# Страниците, които самият генератор създава — НЕ са съдържание и не се
+# взимат предвид при сканирането (иначе следващото пускане ще ги вземе
+# за единични файлове).
+GENERATED = ("index.html", "news.html", "events.html", "week.html", "vreme.html",
+             "podari.html", "radar.html", "cars.html", "aiplan.html", "subs.html",
+             "scout.html", "search.html")
 
 MIN_SIZE = 1024
 
@@ -86,6 +101,16 @@ def parse_digest_name(name):
     return None
 
 
+def parse_other_event(name, html_text):
+    """Еднократен файл със събития (не пасва на горните шаблони): заглавие
+    от <title>, дата от името, ако има такава."""
+    m = re.search(r"<title>(.*?)</title>", html_text, re.S | re.I)
+    title = htmlmod.unescape(re.sub(r"<[^>]+>", "", m.group(1)).strip()) if m else name
+    dm = re.search(r"(\d{4})-(\d{2})-(\d{2})", name)
+    date = datetime(int(dm.group(1)), int(dm.group(2)), int(dm.group(3))) if dm else None
+    return {"name": name, "title": title, "date": date}
+
+
 def extract_h4_titles(html_text, limit=3):
     titles = []
     for t in re.findall(r"<h4[^>]*>(.*?)</h4>", html_text, re.S):
@@ -142,7 +167,7 @@ def is_inlineable(name):
 
 def scan():
     names = [n for n in os.listdir(SITE_DIR)
-             if n.endswith(".html") and n not in ("index.html",)
+             if n.endswith(".html") and n not in GENERATED
              and "test" not in n.lower() and not n.endswith("-share.html")
              and os.path.getsize(os.path.join(SITE_DIR, n)) >= 1]
     news, digests, singles = [], [], {}
@@ -187,17 +212,17 @@ a{color:var(--accent);font-weight:600}
 .brand img{width:32px;height:32px;flex:none}
 .brand-name{font-family:var(--font-serif);font-size:20px;font-weight:600;white-space:nowrap}
 .brand-date{color:var(--muted);font-size:13px;white-space:nowrap}
-.nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 10px;-webkit-overflow-scrolling:touch}
+.nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 10px;-webkit-overflow-scrolling:touch;
+  -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 88%,transparent 100%)}
 .nav::-webkit-scrollbar{display:none}
 .nav a{flex:none;padding:8px 14px;border-radius:var(--r-pill);color:var(--muted);text-decoration:none;font-size:15px;font-weight:500;min-height:36px;display:inline-flex;align-items:center}
-.nav a[aria-current="true"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
-.searchbar{padding:14px 0 4px}
-.searchbar input{width:100%;padding:12px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font-size:16px;font-family:var(--font-sans);background:var(--surface);color:var(--ink)}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.chip{border:1.5px solid var(--border-strong);background:var(--surface);color:var(--ink);border-radius:var(--r-pill);padding:7px 14px;cursor:pointer;font-size:14px;font-weight:600;font-family:var(--font-sans);min-height:36px}
-.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.count-line{color:var(--muted);font-size:13px;margin:8px 0 0;min-height:18px}
-.hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.page-hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
+.page-hero .kicker{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.page-hero h1{font-size:clamp(26px,5vw,34px);line-height:1.15;margin:8px 0 6px;letter-spacing:-.01em}
+.page-hero p.lede{color:var(--muted);margin:6px 0 0}
+.hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
 .hero .kicker{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .hero h1{font-size:clamp(28px,6vw,40px);line-height:1.1;margin:8px 0 6px;letter-spacing:-.01em}
 .hero h1 em{font-style:italic}
@@ -207,9 +232,12 @@ a{color:var(--accent);font-weight:600}
 .hero li{margin:5px 0}
 .btn-primary{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:12px 22px;border-radius:var(--r-pill);font-size:15px;font-weight:600}
 .btn-primary:hover{background:var(--accent-dark)}
-main section{padding:40px 0;border-top:1px solid var(--border);scroll-margin-top:84px}
+.btn-ghost{display:inline-block;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);text-decoration:none;padding:10px 20px;border-radius:var(--r-pill);font-size:15px;font-weight:600}
+main section{padding:32px 0 8px;scroll-margin-top:84px}
 main section h2{font-size:clamp(24px,3vw,30px);line-height:1.15;margin:0 0 4px}
 .section-intro{color:var(--muted);margin:0 0 20px;font-size:15px}
+.section-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.section-head a{font-size:14px;white-space:nowrap}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:20px}
 .card h3{margin:0 0 6px;font-size:19px;line-height:1.3}
@@ -217,6 +245,10 @@ main section h2{font-size:clamp(24px,3vw,30px);line-height:1.15;margin:0 0 4px}
 .card ul{margin:0 0 14px;padding-left:20px}
 .card li{margin:4px 0;font-size:15px}
 .card:hover{box-shadow:var(--shadow-lift)}
+.card .icon{font-size:26px}
+.searchbar{padding:14px 0 4px}
+.searchbar input{width:100%;padding:12px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font-size:16px;font-family:var(--font-sans);background:var(--surface);color:var(--ink)}
+.count-line{color:var(--muted);font-size:13px;margin:8px 0 0;min-height:18px}
 details.edition{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);margin:0 0 12px;overflow:hidden}
 details.edition summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-weight:600}
 details.edition summary::-webkit-details-marker{display:none}
@@ -249,12 +281,17 @@ details.edition .ed-meta{color:var(--muted);font-weight:500;font-size:14px}
 .inline-content tr:last-child td{border-bottom:none}
 .inline-content .warn{color:var(--accent);font-weight:600}
 .inline-content .dow{color:var(--muted);font-size:12px}
-footer{border-top:1px solid var(--border);padding:28px 0 40px;color:var(--muted);font-size:14px}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:16px 18px;margin:0 0 12px}
+.result-card h3{margin:0 0 4px;font-size:17px}
+.result-card .meta{color:var(--muted);font-size:13px;margin:0 0 6px}
+.result-card p{margin:0;font-size:14px;color:var(--ink-soft)}
+footer{border-top:1px solid var(--border);padding:28px 0 40px;color:var(--muted);font-size:14px;margin-top:32px}
 footer a{font-weight:600}
+footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .no-results{color:var(--muted);padding:20px 0}
 @media (min-width:900px){
-  main section{padding:64px 0}
-  .hero{padding:32px}
+  main section{padding:48px 0 8px}
+  .hero,.page-hero{padding:32px}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
@@ -263,64 +300,10 @@ footer a{font-weight:600}
 """
 
 JS = """
-// Scrollspy — активната секция в менюто
+// Менюто се скролва до активната страница
 (function(){
-  var links = document.querySelectorAll('.nav a[href^="#"]');
-  var map = new Map();
-  links.forEach(function(a){ map.set(a.getAttribute('href').slice(1), a); });
-  var spy = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
-      if (!e.isIntersecting) return;
-      links.forEach(function(a){ a.removeAttribute('aria-current'); });
-      var link = map.get(e.target.id);
-      if (link) link.setAttribute('aria-current', 'true');
-    });
-  }, { rootMargin: '-15% 0px -70% 0px' });
-  document.querySelectorAll('main section[id]').forEach(function(s){ spy.observe(s); });
-})();
-// Търсене + филтри по вид
-(function(){
-  var q = document.getElementById('q');
-  var countEl = document.getElementById('count');
-  var noRes = document.getElementById('no-results');
-  var activeKind = '';
-  function apply(){
-    var needle = (q.value || '').trim().toLowerCase();
-    var visible = 0, total = 0;
-    document.querySelectorAll('[data-search]').forEach(function(card){
-      total++;
-      var hitText = !needle || card.dataset.search.toLowerCase().indexOf(needle) !== -1;
-      var hitKind = !activeKind || !card.dataset.kind || card.dataset.kind === activeKind;
-      var hit = hitText && hitKind;
-      card.hidden = !hit;
-      if (hit) visible++;
-    });
-    document.querySelectorAll('main section').forEach(function(sec){
-      var cards = sec.querySelectorAll('[data-search]');
-      if (!cards.length) return;
-      var anyVisible = false;
-      cards.forEach(function(c){ if (!c.hidden) anyVisible = true; });
-      sec.hidden = !anyVisible && (needle !== '' || activeKind !== '');
-    });
-    countEl.textContent = needle || activeKind ? ('Намерени: ' + visible + ' от ' + total) : '';
-    noRes.hidden = visible > 0 || (!needle && !activeKind);
-  }
-  q.addEventListener('input', apply);
-  document.querySelectorAll('.chip[data-kind]').forEach(function(chip){
-    chip.addEventListener('click', function(){
-      var kind = chip.dataset.kind;
-      activeKind = (activeKind === kind) ? '' : kind;
-      document.querySelectorAll('.chip[data-kind]').forEach(function(c){
-        c.setAttribute('aria-pressed', c.dataset.kind === activeKind ? 'true' : 'false');
-      });
-      apply();
-    });
-  });
-  document.getElementById('clear-filters').addEventListener('click', function(){
-    q.value = ''; activeKind = '';
-    document.querySelectorAll('.chip[data-kind]').forEach(function(c){ c.setAttribute('aria-pressed', 'false'); });
-    apply();
-  });
+  var cur = document.querySelector('.nav a[aria-current="page"]');
+  if (cur) cur.scrollIntoView({inline:'center', block:'nearest'});
 })();
 // Зареждане на iframe при първо отваряне на <details>
 (function(){
@@ -339,14 +322,60 @@ JS = """
     });
   });
 })();
-// Автоматична височина на вградените страници (same-origin измерване)
+// Дълбок линк към издание/дайджест: отваря го при зареждане
+(function(){
+  var h = location.hash && location.hash.slice(1);
+  if (!h) return;
+  var el = document.getElementById(h);
+  if (el && el.tagName === 'DETAILS') {
+    el.open = true;
+    var f = el.querySelector('iframe[data-src]');
+    if (f && !f.src) f.src = f.dataset.src;
+    setTimeout(function(){ el.scrollIntoView({block:'start'}); fitIframes(); }, 350);
+  }
+})();
+// Търсене на страницата (новини/събития): филтрира картите по data-search
+(function(){
+  var q = document.getElementById('q');
+  if (!q) return;
+  var countEl = document.getElementById('count');
+  var noRes = document.getElementById('no-results');
+  function apply(){
+    var needle = (q.value || '').trim().toLowerCase();
+    var visible = 0, total = 0;
+    document.querySelectorAll('[data-search]').forEach(function(card){
+      total++;
+      var hit = !needle || card.dataset.search.toLowerCase().indexOf(needle) !== -1;
+      card.hidden = !hit;
+      if (hit) visible++;
+    });
+    document.querySelectorAll('.archive-month').forEach(function(m){
+      var anyVisible = false;
+      m.querySelectorAll('[data-search]').forEach(function(c){ if (!c.hidden) anyVisible = true; });
+      m.hidden = !anyVisible && needle !== '';
+    });
+    if (countEl) countEl.textContent = needle ? ('Намерени: ' + visible + ' от ' + total) : '';
+    if (noRes) noRes.hidden = visible > 0 || !needle;
+  }
+  q.addEventListener('input', apply);
+})();
+// Автоматична височина на вградените страници: долният ръб на последния
+// видим елемент в тялото (не scrollHeight — той брои и празното отдолу)
 function fitIframes(){
   document.querySelectorAll('iframe[data-autosize]').forEach(function(f){
     try {
-      if (!f.contentWindow || !f.contentDocument) return;
-      var doc = f.contentDocument;
-      var h = Math.max(doc.documentElement ? doc.documentElement.scrollHeight : 0,
-                      doc.body ? doc.body.scrollHeight : 0);
+      if (!f.contentWindow || !f.contentDocument || !f.contentDocument.body) return;
+      var doc = f.contentDocument, view = doc.defaultView, best = 0;
+      var kids = doc.body.children;
+      for (var i = 0; i < kids.length; i++) {
+        var el = kids[i];
+        if (view.getComputedStyle(el).display === 'none') continue;
+        var r = el.getBoundingClientRect();
+        if (!r.height && !r.width) continue;
+        var bottom = r.top + view.scrollY + r.height;
+        if (bottom > best) best = bottom;
+      }
+      var h = best > 100 ? best : doc.body.scrollHeight;
       if (h > 100) f.style.height = (h + 8) + 'px';
     } catch (e) { /* cross-origin или още не е зареден — пропускаме */ }
   });
@@ -354,6 +383,54 @@ function fitIframes(){
 window.addEventListener('load', function(){ fitIframes(); setInterval(fitIframes, 900); });
 window.addEventListener('resize', fitIframes);
 """
+
+SEARCH_JS = """
+(function(){
+  var q = document.getElementById('q');
+  var results = document.getElementById('results');
+  var countEl = document.getElementById('count');
+  var data = null;
+  function render(needle){
+    needle = (needle || '').trim().toLowerCase();
+    if (!data) { results.innerHTML = '<p class="no-results">Зареждам индекса…</p>'; return; }
+    if (!needle) {
+      results.innerHTML = '<p class="no-results">Напиши дума — търси в изданията, събитията и седмицата.</p>';
+      countEl.textContent = '';
+      return;
+    }
+    var hits = data.filter(function(e){
+      return (e.t + ' ' + e.s + ' ' + e.k).toLowerCase().indexOf(needle) !== -1;
+    }).slice(0, 40);
+    countEl.textContent = 'Намерени: ' + hits.length;
+    if (!hits.length) {
+      results.innerHTML = '<p class="no-results">Няма съвпадения — опитай с по-кратка дума.</p>';
+      return;
+    }
+    results.innerHTML = hits.map(function(e){
+      return '<article class="result-card"><h3><a href="' + e.u + '">' + e.t + '</a></h3>'
+        + '<p class="meta">' + e.k + (e.d ? ' · ' + e.d : '') + '</p>'
+        + (e.s ? '<p>' + e.s + '</p>' : '') + '</article>';
+    }).join('');
+  }
+  fetch('search.json').then(function(r){ return r.json(); }).then(function(j){
+    data = j; render(q.value);
+  }).catch(function(){
+    results.innerHTML = '<p class="no-results">Индексът не се зареди — опитай отново след малко.</p>';
+  });
+  q.addEventListener('input', function(){ render(q.value); });
+  var params = new URLSearchParams(location.search);
+  if (params.get('q')) { q.value = params.get('q'); }
+  render(q.value);
+})();
+"""
+
+
+def news_slug(item):
+    return item["name"][:-5]
+
+
+def digest_slug(item):
+    return item["name"][:-5]
 
 
 def news_card(item, html_text, open_by_default=False):
@@ -366,7 +443,6 @@ def news_card(item, html_text, open_by_default=False):
     date_html = esc(item["label"]) if item.get("label") else "%s, %s" % (date_str, weekday)
     search = "%s %s %s %s %s" % (date_str, weekday, label, item["part"],
                                  " ".join(preview))
-    bullets = "".join("<li>%s</li>" % esc(t) for t in preview)
     open_attr = " open" if open_by_default else ""
     return (
         '<details class="edition" id="ed-%s" data-kind="%s" data-search="%s"%s>'
@@ -376,7 +452,7 @@ def news_card(item, html_text, open_by_default=False):
         '<div class="ed-body"><iframe data-src="%s" data-autosize loading="lazy" '
         'title="Новини %s — %s"></iframe></div>'
         '</details>'
-        % (esc(item["name"][:-5]), item["part"], esc(search), open_attr,
+        % (esc(news_slug(item)), item["part"], esc(search), open_attr,
            emoji, label, date_html, count, esc(item["name"]),
            date_str, label)
     )
@@ -393,61 +469,73 @@ def news_preview_card(item, html_text):
     return (
         '<article class="card" data-kind="%s" data-search="%s">'
         '<h3>%s %s · %s</h3><p class="meta">%s · %d новини</p><ul>%s</ul>'
-        '<a class="btn-primary" href="#ed-%s" data-open-details="ed-%s">Чети изданието ↓</a>'
+        '<a class="btn-primary" href="news.html#ed-%s">Чети изданието ↓</a>'
         '</article>'
         % (item["part"], esc(search), emoji, label, date_str, weekday_bg(item["date"]),
-           count, bullets, esc(item["name"][:-5]), esc(item["name"][:-5]))
+           count, bullets, esc(news_slug(item)))
     )
 
 
-def digest_row(item, html_text):
+def digest_meta(html_text):
     count = count_articles(html_text)
+    meta = "%d събития" % count
+    m = re.search(r"(\d+) събития.*🆓 (\d+) безплатни.*🆕 (\d+) нови", html_text, re.S)
+    if m:
+        meta = "%s събития · 🆓 %s безплатни · 🆕 %s нови" % (m.group(1), m.group(2), m.group(3))
+    return meta
+
+
+def digest_row(item, html_text, lazy=True):
     preview = extract_first_headings(html_text, 3)
     if item["kind"] == "daily":
         title = "%s, %s" % (fmt_date(item["date"]), weekday_bg(item["date"]))
         search_extra = " ".join(preview)
-        meta = "%d събития" % count
-        m = re.search(r"(\d+) събития.*🆓 (\d+) безплатни.*🆕 (\d+) нови", html_text, re.S)
-        if m:
-            meta = "%s събития · 🆓 %s безплатни · 🆕 %s нови" % (m.group(1), m.group(2), m.group(3))
     elif item["kind"] == "weekly":
         title = "%s · %s" % (fmt_date(item["date"]), item["label"])
         search_extra = "седмичен списък " + " ".join(preview)
-        meta = "%d събития" % count
     else:
         title = item["label"]
         search_extra = "вечерни " + " ".join(preview)
-        meta = "%d събития" % count
+    meta = digest_meta(html_text)
     search = "%s %s" % (title, search_extra)
+    if lazy:
+        frame = ('<iframe data-src="%s" data-autosize loading="lazy" '
+                 'title="Дайджест %s"></iframe>' % (esc(item["name"]), esc(title)))
+    else:
+        frame = ('<iframe src="%s" data-autosize loading="lazy" '
+                 'title="Дайджест %s"></iframe>' % (esc(item["name"]), esc(title)))
     return (
-        '<details class="edition" data-kind="events" data-search="%s">'
+        '<details class="edition" id="dg-%s" data-kind="events" data-search="%s">'
         '<summary><span class="ed-part">🗓️ %s</span>'
         '<span class="ed-meta">%s</span><span class="chev">›</span></summary>'
-        '<div class="ed-body"><iframe data-src="%s" data-autosize loading="lazy" '
-        'title="Дайджест %s"></iframe></div></details>'
-        % (esc(search), esc(title), esc(meta), esc(item["name"]), esc(title))
+        '<div class="ed-body">%s</div></details>'
+        % (esc(digest_slug(item)), esc(search), esc(title), esc(meta), frame)
     )
 
 
-def single_section(sec_id, title, intro, name):
+def other_event_row(item, html_text):
+    count = count_articles(html_text)
+    title = item["title"]
+    date_str = fmt_date(item["date"]) if item["date"] else ""
+    search = "%s %s" % (title, date_str)
+    return (
+        '<details class="edition" data-kind="events" data-search="%s">'
+        '<summary><span class="ed-part">🗓️ %s</span>'
+        '<span class="ed-meta">%s · %d събития</span><span class="chev">›</span></summary>'
+        '<div class="ed-body"><iframe data-src="%s" data-autosize loading="lazy" '
+        'title="%s"></iframe></div></details>'
+        % (esc(search), esc(title), esc(date_str), count, esc(item["name"]), esc(title))
+    )
+
+
+def single_body(name):
+    """Тяло за страница на единичен файл: вградено или iframe."""
     if is_inlineable(name):
         body = inline_body(name)
-        search = plain_text(body, 600)
-        return (
-            '<section id="%s" aria-labelledby="%s-h"><div class="container">'
-            '<h2 id="%s-h">%s</h2><p class="section-intro">%s</p>'
-            '<div class="inline-content" data-kind="%s" data-search="%s">%s</div>'
-            '</div></section>'
-            % (sec_id, sec_id, sec_id, esc(title), esc(intro), sec_id, esc(search), body)
-        )
-    search = "%s %s" % (title, intro)
+        return '<div class="inline-content">%s</div>' % body
     return (
-        '<section id="%s" aria-labelledby="%s-h"><div class="container">'
-        '<h2 id="%s-h">%s</h2><p class="section-intro">%s</p>'
-        '<div class="frame-wrap" data-kind="%s" data-search="%s"><iframe src="%s" data-autosize loading="lazy" '
-        'title="%s"></iframe></div>'
-        '</div></section>'
-        % (sec_id, sec_id, sec_id, esc(title), esc(intro), sec_id, esc(search), esc(name), esc(title))
+        '<div class="frame-wrap"><iframe src="%s" data-autosize loading="lazy" '
+        'title="Съдържание"></iframe></div>' % esc(name)
     )
 
 
@@ -474,6 +562,7 @@ def build_feed(news_items):
         % (BASE_URL, "".join(items))
     )
 
+
 def main():
     news, digests, singles = scan()
     news.sort(key=lambda x: (x["date"], PART_ORDER[x["part"]]))
@@ -485,6 +574,41 @@ def main():
     for item in digests:
         texts[item["name"]] = read_file(item["name"])
 
+    # Единични файлове (фиксиран ред) + еднократни файлове със събития
+    single_defs = [
+        ("week", "Седмицата", "Седмицата напред", "Какво предстои през седмицата — от календара и пощата.",
+         "week-ahead.html", "📅"),
+        ("vreme", "Времето", "Времето в София", "Прогноза за следващите дни.",
+         "weather.html", "🌤️"),
+        ("podari", "Подари Време", "Подари Време", "Доброволчество с деца — посещения, обучения и информация.",
+         "podari-vreme.html", "❤️"),
+        ("radar", "RADAR", "RADAR действия", "Какво следва от последните AI RADAR издания.",
+         "radar-actions.html", "📡"),
+        ("cars", "Коли", "Коли", "Обяви за коли, които следя.",
+         "cars-dashboard.html", "🚗"),
+        ("aiplan", "AI план", "AI план", "Какво уча и какво следва.",
+         "udemy-plan-2026-11-05.html", "🤖"),
+        ("subs", "Абонаменти", "Абонаменти", "Месечен одит на абонаментите.",
+         "subscriptions.html", "💳"),
+    ]
+    scout_files = sorted(n for n in singles if n.startswith("scout-") and n.endswith(".html"))
+    if scout_files:
+        single_defs.append(("scout", "AI разузнаване", "AI разузнаване",
+                            "Карти от седмичното разузнаване.", scout_files[-1], "🔭"))
+    known_singles = {d[4] for d in single_defs}
+    other_events = []
+    for name in sorted(singles):
+        if name in known_singles or name.startswith("scout-"):
+            continue
+        other_events.append(parse_other_event(name, read_file(name)))
+
+    pages = [("index", "Начало", "index.html"),
+             ("news", "Новини", "news.html"),
+             ("events", "Събития", "events.html")]
+    for sec_id, nav_label, _t, _i, _f, _e in single_defs:
+        pages.append((sec_id, nav_label, sec_id + ".html"))
+    pages.append(("search", "🔍 Търсене", "search.html"))
+
     updated_ts = 0
     for name in list(texts) + list(singles):
         updated_ts = max(updated_ts, file_mtime(name))
@@ -493,15 +617,154 @@ def main():
     today_str = "%s, %d %s %d" % (WEEKDAYS_BG[now.weekday()], now.day,
                                   MONTHS_BG[now.month - 1], now.year)
 
-    sections = []
-    nav = []
+    def nav_html(active):
+        out = []
+        for page_id, label, href in pages:
+            cur = ' aria-current="page"' if page_id == active else ""
+            out.append('<a href="%s"%s>%s</a>' % (href, cur, esc(label)))
+        return "".join(out)
 
-    # ---- Новини: hero + днес + архив ----
+    def shell(active, title, body_html, extra_js=""):
+        page = (
+            '<!DOCTYPE html>\n<html lang="bg">\n<head>\n<meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            '<title>%s — Моите дайджести</title>\n'
+            '<meta name="description" content="Новини, събития и справки — обновява се автоматично.">\n'
+            '<meta name="theme-color" content="#FBF9F3">\n'
+            '<link rel="icon" href="favicon.ico" sizes="any">\n'
+            '<link rel="icon" href="favicon.svg" type="image/svg+xml">\n'
+            '<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n'
+            '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
+            '<link rel="manifest" href="site.webmanifest">\n'
+            '<link rel="alternate" type="application/rss+xml" title="Моите дайджести — Новини" href="feed.xml">\n'
+            '<style>' + CSS + '</style>\n</head>\n<body>\n'
+            '<a class="skip-link" href="#main">Към съдържанието</a>\n'
+            '<header class="site-header"><div class="container">'
+            '<div class="header-row"><a class="brand" href="index.html">'
+            '<img src="favicon.svg" alt="" width="32" height="32">'
+            '<span class="brand-name">Моите дайджести</span></a>'
+            '<span class="brand-date">' + esc(today_str) + '</span></div>'
+            '<nav class="nav" aria-label="Раздели">' + nav_html(active) + '</nav>'
+            '</div></header>\n'
+            '<main id="main">' + body_html + '</main>\n'
+            '<footer><div class="container">'
+            '<div class="foot-nav">' + nav_html(active) + '</div>'
+            '<p>Последно обновяване: ' + esc(updated) + ' · Обновява се автоматично на всеки час.</p>'
+            '<p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p>'
+            '</div></footer>\n'
+            '<script>' + JS + '</script>\n' + extra_js +
+            '</body>\n</html>\n'
+        )
+        return page
+
+    def write_page(filename, content):
+        with open(os.path.join(SITE_DIR, filename), "w", encoding="utf-8") as f:
+            f.write(content)
+        return len(content.encode("utf-8"))
+
+    sizes = {}
+
+    # ================= НАЧАЛО =================
+    if news:
+        latest = news[-1]
+        latest_text = texts[latest["name"]]
+        hero_html = (
+            '<div class="container" id="top"><div class="hero"><p class="kicker">Най-новото</p>'
+            '<h1>Новини <span class="hl">%s, %s</span> — <em>%s</em></h1>'
+            '<p class="lede">%d новини · %s</p><ul>%s</ul>'
+            '<a class="btn-primary" href="news.html#ed-%s">Чети изданието ↓</a></div></div>'
+            % (fmt_date(latest["date"]), weekday_bg(latest["date"]),
+               PART_LABEL[latest["part"]],
+               count_articles(latest_text), PART_EMOJI[latest["part"]],
+               "".join("<li>%s</li>" % esc(t) for t in extract_h4_titles(latest_text, 3)),
+               esc(news_slug(latest)))
+        )
+        latest_date = latest["date"]
+        today_items = [i for i in news if i["date"] == latest_date]
+        today_cards = "".join(news_preview_card(i, texts[i["name"]]) for i in today_items)
+    else:
+        hero_html = '<div class="container" id="top"></div>'
+        today_cards = ""
+
+    # последен дайджест — карта за началната
+    digest_card = ""
+    if digests:
+        daily = [d for d in digests if d["kind"] == "daily"]
+        latest_d = daily[0] if daily else digests[0]
+        digest_card = (
+            '<article class="card"><span class="icon">🗓️</span>'
+            '<h3>Събития — %s</h3><p class="meta">%s</p>'
+            '<a class="btn-primary" href="events.html#dg-%s">Виж дайджеста ↓</a></article>'
+            % (fmt_date(latest_d["date"]), esc(digest_meta(texts[latest_d["name"]])),
+               esc(digest_slug(latest_d)))
+        )
+
+    # седмицата — първите 3 точки от week-ahead
+    week_card = ""
+    if "week-ahead.html" in singles:
+        week_body = inline_body("week-ahead.html")
+        items = []
+        for m in re.finditer(r'<div class="item">(.*?)</div>', week_body, re.S):
+            t = re.sub(r"<[^>]+>", "", m.group(1))
+            t = htmlmod.unescape(t).strip()
+            t = re.sub(r"\s+", " ", t)
+            if t:
+                items.append(t)
+            if len(items) >= 3:
+                break
+        if items:
+            week_card = (
+                '<article class="card"><span class="icon">📅</span>'
+                '<h3>Седмицата напред</h3><ul>%s</ul>'
+                '<a class="btn-primary" href="week.html">Цялата седмица →</a></article>'
+                % "".join("<li>%s</li>" % esc(t) for t in items)
+            )
+
+    # решетка с разделите
+    grid_cards = []
+    grid_cards.append(
+        '<article class="card"><span class="icon">📰</span><h3>Новини</h3>'
+        '<p class="meta">%d издания · сутрин, следобед и вечер</p>'
+        '<a class="btn-ghost" href="news.html">Отвори →</a></article>' % len(news)
+    )
+    grid_cards.append(
+        '<article class="card"><span class="icon">🗓️</span><h3>Събития</h3>'
+        '<p class="meta">%d дайджеста · дневен, седмичен и вечерни</p>'
+        '<a class="btn-ghost" href="events.html">Отвори →</a></article>' % len(digests)
+    )
+    for sec_id, nav_label, title, intro, fname, emoji in single_defs:
+        if fname not in singles:
+            continue
+        meta = intro
+        grid_cards.append(
+            '<article class="card"><span class="icon">%s</span><h3>%s</h3>'
+            '<p class="meta">%s</p>'
+            '<a class="btn-ghost" href="%s.html">Отвори →</a></article>'
+            % (emoji, esc(title), esc(meta), sec_id)
+        )
+
+    home_body = (
+        hero_html
+        + '<section aria-labelledby="today-h"><div class="container">'
+          '<div class="section-head"><h2 id="today-h">Днес</h2>'
+          '<a href="news.html">Всички новини →</a></div>'
+          '<div class="grid">%s%s%s</div>'
+          '</div></section>'
+        % (today_cards, digest_card, week_card)
+        + '<section aria-labelledby="sections-h"><div class="container">'
+          '<h2 id="sections-h">Раздели</h2>'
+          '<p class="section-intro">Всичко на едно място — избери раздел и чети на място.</p>'
+          '<div class="grid">%s</div>'
+          '</div></section>' % "".join(grid_cards)
+    )
+    sizes["index.html"] = write_page(
+        "index.html", shell("index", "Новини, събития и справки", home_body))
+
+    # ================= НОВИНИ =================
     if news:
         latest = news[-1]
         latest_date = latest["date"]
         today_items = [i for i in news if i["date"] == latest_date]
-        today_cards = "".join(news_preview_card(i, texts[i["name"]]) for i in today_items)
         today_details = "".join(
             news_card(i, texts[i["name"]], open_by_default=(i is latest))
             for i in today_items
@@ -519,132 +782,132 @@ def main():
                 '<details class="archive-month"><summary>%s %d · %d издания</summary>%s</details>'
                 % (MONTHS_BG[mo - 1], y, len(items), rows)
             )
-        sections.append(
-            '<section id="news" aria-labelledby="news-h"><div class="container">'
-            '<h2 id="news-h">Новини</h2>'
-            '<p class="section-intro">Сутрин, следобед и вечер — чети на място, без да отваряш отделни файлове.</p>'
-            '<div class="grid">%s</div>%s'
+        news_body = (
+            '<div class="container" id="top"><div class="page-hero">'
+            '<p class="kicker">Новини</p><h1>Новини — сутрин, следобед и вечер</h1>'
+            '<p class="lede">%d издания · чети на място, без да отваряш отделни файлове. '
+            'Всяко издание има търсене и филтри вътре.</p></div>'
+            '<div class="searchbar" role="search">'
+            '<input id="q" type="search" placeholder="Търси в новините…" aria-label="Търси в новините">'
+            '<p class="count-line" id="count" aria-live="polite"></p>'
+            '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
+            '</div></div>'
+            '<section aria-labelledby="today-h"><div class="container">'
+            '<h2 id="today-h">%s, %s</h2>%s'
             '<h3 style="margin:28px 0 12px;font-family:var(--font-serif);font-size:20px">Архив</h3>%s'
-            '</div></section>' % (today_cards, today_details, archive_html)
+            '</div></section>'
+            % (len(news), fmt_date(latest_date), weekday_bg(latest_date),
+               today_details, archive_html)
         )
-        nav.append(("news", "Новини"))
+        sizes["news.html"] = write_page(
+            "news.html", shell("news", "Новини", news_body))
 
-    # ---- Събития: последен дайджест + архив ----
+    # ================= СЪБИТИЯ =================
     if digests:
         daily = [d for d in digests if d["kind"] == "daily"]
         latest_d = daily[0] if daily else digests[0]
-        latest_text = texts[latest_d["name"]]
-        count = count_articles(latest_text)
-        meta = "%d събития" % count
-        m = re.search(r"(\d+) събития.*🆓 (\d+) безплатни.*🆕 (\d+) нови", latest_text, re.S)
-        if m:
-            meta = "%s събития · 🆓 %s безплатни · 🆕 %s нови" % (m.group(1), m.group(2), m.group(3))
         rest = [d for d in digests if d is not latest_d]
         archive_html = "".join(digest_row(d, texts[d["name"]]) for d in rest)
-        sections.append(
-            '<section id="events" aria-labelledby="events-h"><div class="container">'
-            '<h2 id="events-h">Събития — дневен дайджест</h2>'
-            '<p class="section-intro">%s · %s</p>'
-            '<p class="frame-note">Филтрите са вътре в дайджеста: търсене, дни и категории.</p>'
-            '<div class="frame-wrap" data-kind="events" data-search="събития дневен дайджест %s %s"><iframe src="%s" data-autosize loading="lazy" '
-            'title="Дайджест %s"></iframe></div>'
-            '<h3 style="margin:28px 0 12px;font-family:var(--font-serif);font-size:20px">По-стари дайджести</h3>%s'
+        other_html = ""
+        if other_events:
+            other_html = (
+                '<h3 style="margin:28px 0 12px;font-family:var(--font-serif);font-size:20px">Още</h3>'
+                + "".join(other_event_row(o, read_file(o["name"])) for o in other_events)
+            )
+        events_body = (
+            '<div class="container" id="top"><div class="page-hero">'
+            '<p class="kicker">Събития</p><h1>Дневен дайджест със събития</h1>'
+            '<p class="lede">%s · %s. Филтрите са вътре в дайджеста: търсене, дни и категории.</p></div>'
+            '<div class="searchbar" role="search">'
+            '<input id="q" type="search" placeholder="Търси в дайджестите…" aria-label="Търси в дайджестите">'
+            '<p class="count-line" id="count" aria-live="polite"></p>'
+            '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
+            '</div></div>'
+            '<section aria-labelledby="latest-h"><div class="container">'
+            '<h2 id="latest-h">Най-новият дайджест</h2>%s'
+            '<h3 style="margin:28px 0 12px;font-family:var(--font-serif);font-size:20px">По-стари дайджести</h3>%s%s'
             '</div></section>'
-            % (fmt_date(latest_d["date"]), meta, fmt_date(latest_d["date"]), meta,
-               esc(latest_d["name"]), fmt_date(latest_d["date"]), archive_html)
+            % (fmt_date(latest_d["date"]), esc(digest_meta(texts[latest_d["name"]])),
+               digest_row(latest_d, texts[latest_d["name"]], lazy=False),
+               archive_html, other_html)
         )
-        nav.append(("events", "Събития"))
+        sizes["events.html"] = write_page(
+            "events.html", shell("events", "Събития", events_body))
 
-    # ---- Единични файлове (фиксиран ред) ----
-    single_defs = [
-        ("week", "Седмицата напред", "Какво предстои през седмицата — от календара и пощата.",
-         "week-ahead.html"),
-        ("weather", "Времето в София", "Прогноза за следващите дни.",
-         "weather.html"),
-        ("podari", "Подари Време", "Доброволчество с деца — посещения, обучения и информация.",
-         "podari-vreme.html"),
-        ("radar", "RADAR действия", "Какво следва от последните AI RADAR издания.",
-         "radar-actions.html"),
-        ("cars", "Коли", "Обяви за коли, които следя.",
-         "cars-dashboard.html"),
-        ("aiplan", "AI план", "Какво уча и какво следва.",
-         "udemy-plan-2026-11-05.html"),
-        ("subs", "Абонаменти и разходи", "Месечен одит на абонаментите.",
-         "subscriptions.html"),
-    ]
-    scout_files = sorted(n for n in singles if n.startswith("scout-") and n.endswith(".html"))
-    if scout_files:
-        single_defs.append(("scout", "AI разузнаване", "Карти от седмичното разузнаване.",
-                            scout_files[-1]))
-    for sec_id, title, intro, name in single_defs:
-        if name in singles:
-            sections.append(single_section(sec_id, title, intro, name))
-            nav.append((sec_id, title))
-
-    nav_html = "".join(
-        '<a href="#%s">%s</a>' % (sec_id, esc(label)) for sec_id, label in nav
-    )
-    hero_html = ""
-    if news:
-        hero_html = (
-            '<div class="hero"><p class="kicker">Най-новото</p>'
-            '<h1>Новини <span class="hl">%s, %s</span> — <em>%s</em></h1>'
-            '<p class="lede">%d новини · %s</p><ul>%s</ul>'
-            '<a class="btn-primary" href="#ed-%s" data-open-details="ed-%s">Чети изданието ↓</a></div>'
-            % (fmt_date(news[-1]["date"]), weekday_bg(news[-1]["date"]),
-               PART_LABEL[news[-1]["part"]],
-               count_articles(texts[news[-1]["name"]]),
-               PART_EMOJI[news[-1]["part"]],
-               "".join("<li>%s</li>" % esc(t) for t in extract_h4_titles(texts[news[-1]["name"]], 3)),
-               esc(news[-1]["name"][:-5]), esc(news[-1]["name"][:-5]))
+    # ================= ЕДИНИЧНИ СТРАНИЦИ =================
+    for sec_id, nav_label, title, intro, fname, emoji in single_defs:
+        if fname not in singles:
+            continue
+        body = (
+            '<div class="container" id="top"><div class="page-hero">'
+            '<p class="kicker">%s</p><h1>%s</h1>'
+            '<p class="lede">%s</p></div></div>'
+            '<section><div class="container">%s</div></section>'
+            % (esc(nav_label), esc(title), esc(intro), single_body(fname))
         )
+        sizes[sec_id + ".html"] = write_page(
+            sec_id + ".html", shell(sec_id, title, body))
 
-    page = (
-        '<!DOCTYPE html>\n<html lang="bg">\n<head>\n<meta charset="utf-8">\n'
-        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-        '<title>Моите дайджести — новини, събития и справки</title>\n'
-        '<meta name="description" content="Новини, събития и справки — обновява се автоматично.">\n'
-        '<meta name="theme-color" content="#FBF9F3">\n'
-        '<link rel="icon" href="favicon.ico" sizes="any">\n'
-        '<link rel="icon" href="favicon.svg" type="image/svg+xml">\n'
-        '<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n'
-        '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
-        '<link rel="manifest" href="site.webmanifest">\n'
-        '<link rel="alternate" type="application/rss+xml" title="Моите дайджести — Новини" href="feed.xml">\n'
-        '<style>' + CSS + '</style>\n</head>\n<body>\n'
-        '<a class="skip-link" href="#main">Към съдържанието</a>\n'
-        '<header class="site-header"><div class="container">'
-        '<div class="header-row"><a class="brand" href="#top">'
-        '<img src="favicon.svg" alt="" width="32" height="32">'
-        '<span class="brand-name">Моите дайджести</span></a>'
-        '<span class="brand-date">' + esc(today_str) + '</span></div>'
-        '<nav class="nav" aria-label="Раздели">' + nav_html + '</nav>'
-        '</div></header>\n'
-        '<div class="container searchbar" role="search">'
-        '<input id="q" type="search" placeholder="Търси в дайджестите…" aria-label="Търси в дайджестите">'
-        '<div class="chips">'
-        '<button class="chip" data-kind="" aria-pressed="true">Всички</button>'
-        '<button class="chip" data-kind="morning" aria-pressed="false">🌅 Сутрин</button>'
-        '<button class="chip" data-kind="afternoon" aria-pressed="false">🌆 Следобед</button>'
-        '<button class="chip" data-kind="evening" aria-pressed="false">🌙 Вечер</button>'
-        '<button class="chip" data-kind="events" aria-pressed="false">🗓️ Събития</button>'
-        '<button class="chip" id="clear-filters">Изчисти филтрите</button>'
-        '</div><p class="count-line" id="count" aria-live="polite"></p>'
-        '<p class="no-results" id="no-results" hidden>Няма съвпадения — опитай с по-кратка дума.</p>'
-        '</div>\n'
-        '<main id="main"><div class="container" id="top">' + hero_html + '</div>'
-        + "".join(sections) +
-        '</main>\n'
-        '<footer><div class="container">'
-        '<p>Последно обновяване: ' + esc(updated) + ' · Обновява се автоматично на всеки час.</p>'
-        '<p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p>'
-        '</div></footer>\n'
-        '<script>' + JS + '</script>\n</body>\n</html>\n'
+    # ================= ТЪРСЕНЕ =================
+    search_entries = []
+    for item in news:
+        search_entries.append({
+            "t": "Новини %s — %s" % (fmt_date(item["date"]), PART_LABEL[item["part"]]),
+            "d": "%s, %s" % (fmt_date(item["date"]), weekday_bg(item["date"])),
+            "k": "Новини",
+            "u": "news.html#ed-%s" % news_slug(item),
+            "s": " ".join(extract_h4_titles(texts[item["name"]], 5)),
+        })
+    for item in digests:
+        title = "%s, %s" % (fmt_date(item["date"]), weekday_bg(item["date"])) \
+            if item["kind"] == "daily" else item["label"]
+        search_entries.append({
+            "t": "Дайджест — %s" % title,
+            "d": fmt_date(item["date"]),
+            "k": "Събития",
+            "u": "events.html#dg-%s" % digest_slug(item),
+            "s": " ".join(extract_first_headings(texts[item["name"]], 5)),
+        })
+    for sec_id, nav_label, title, intro, fname, emoji in single_defs:
+        if fname not in singles:
+            continue
+        search_entries.append({
+            "t": title, "d": "", "k": "Страница",
+            "u": "%s.html" % sec_id,
+            "s": plain_text(read_file(fname), 300),
+        })
+    if "week-ahead.html" in singles:
+        week_body = inline_body("week-ahead.html")
+        for m in re.finditer(r'<div class="item">(.*?)</div>', week_body, re.S):
+            t = re.sub(r"<[^>]+>", "", m.group(1))
+            t = htmlmod.unescape(t).strip()
+            t = re.sub(r"\s+", " ", t)
+            if t:
+                search_entries.append({
+                    "t": t[:120], "d": "", "k": "Седмицата",
+                    "u": "week.html", "s": t,
+                })
+    with open(os.path.join(SITE_DIR, "search.json"), "w", encoding="utf-8") as f:
+        json.dump(search_entries, f, ensure_ascii=False)
+    search_body = (
+        '<div class="container" id="top"><div class="page-hero">'
+        '<p class="kicker">Търсене</p><h1>Търси в дайджестите</h1>'
+        '<p class="lede">В изданията, събитията и седмицата — наведнъж.</p></div>'
+        '<div class="searchbar" role="search">'
+        '<input id="q" type="search" placeholder="Напиши дума — например „преход“, „джаз“, „Подари Време“…“ aria-label="Търси в дайджестите">'
+        '<p class="count-line" id="count" aria-live="polite"></p>'
+        '</div><div id="results"><p class="no-results">Напиши дума — търси в изданията, събитията и седмицата.</p></div>'
+        '</div>'
     )
-    with open(os.path.join(SITE_DIR, "index.html"), "w", encoding="utf-8") as f:
-        f.write(page)
+    sizes["search.html"] = write_page(
+        "search.html", shell("search", "Търсене", search_body,
+                             extra_js='<script>' + SEARCH_JS + '</script>\n'))
+
+    # ================= RSS =================
     with open(os.path.join(SITE_DIR, "feed.xml"), "w", encoding="utf-8") as f:
         f.write(build_feed(news))
+    sizes["feed.xml"] = os.path.getsize(os.path.join(SITE_DIR, "feed.xml"))
+    sizes["search.json"] = os.path.getsize(os.path.join(SITE_DIR, "search.json"))
 
     counts = {
         "total": len(news) + len(digests) + len(singles),
@@ -658,10 +921,7 @@ def main():
         "weather": 1 if "weather.html" in singles else 0,
         "subs": 1 if "subscriptions.html" in singles else 0,
         "scout": len(scout_files),
-        "other": len([n for n in singles if n not in (
-            "podari-vreme.html", "radar-actions.html", "cars-dashboard.html",
-            "udemy-plan-2026-11-05.html", "week-ahead.html", "weather.html",
-            "subscriptions.html") and not n.startswith("scout-")]),
+        "other": len(other_events),
     }
     print("INDEX: total=%d news=%d digest=%d podari=%d radar=%d cars=%d aiplan=%d "
           "events=%d week=%d weather=%d subs=%d scout=%d other=%d updated=%s"
@@ -669,9 +929,7 @@ def main():
              counts["radar"], counts["cars"], counts["aiplan"], counts["events"],
              counts["week"], counts["weather"], counts["subs"], counts["scout"],
              counts["other"], updated))
-    print("INDEX-SIZE: index.html=%d bytes feed.xml=%d bytes"
-          % (len(page.encode("utf-8")),
-             len(build_feed(news).encode("utf-8"))))
+    print("INDEX-SIZE: " + " ".join("%s=%d" % (k, v) for k, v in sorted(sizes.items())))
 
 
 if __name__ == "__main__":

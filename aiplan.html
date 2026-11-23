@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>%s — Моите дайджести</title>
+<meta name="description" content="Новини, събития и справки — обновява се автоматично.">
+<meta name="theme-color" content="#FBF9F3">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="alternate" type="application/rss+xml" title="Моите дайджести — Новини" href="feed.xml">
+<style>
+:root{
+  --bg:#FBF9F3; --surface:#FFFFFF; --surface-2:#F5F1E8; --surface-3:#F2EDE8;
+  --ink:#2B2118; --ink-soft:#3D3226; --muted:#5F5E5C;
+  --border:#E8E4DA; --border-strong:#DBD7CD;
+  --accent:#9C493D; --accent-dark:#7A3B2B; --accent-soft:#FBEADD;
+  --terra:#CE6246; --highlight:#F7DC1F; --highlight-soft:#FCF9E7;
+  --sage:#5F7263; --focus:#1D4ED8;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px; --r-pill:999px;
+  --shadow-card:0 1px 2px rgba(43,33,24,.05),0 8px 24px rgba(43,33,24,.06);
+  --shadow-lift:0 2px 4px rgba(43,33,24,.06),0 16px 32px rgba(43,33,24,.10);
+  --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--font-sans);font-size:17px;line-height:1.6;background:var(--bg);color:var(--ink)}
+h1,h2{font-family:var(--font-serif);color:var(--ink-soft)}
+a{color:var(--accent);font-weight:600}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.skip-link{position:absolute;left:-999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 12px 0;z-index:100}
+.skip-link:focus{left:0;color:#fff}
+.container{max-width:1080px;margin:0 auto;padding:0 16px}
+.site-header{position:sticky;top:0;z-index:50;background:rgba(251,249,243,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.header-row{display:flex;align-items:center;gap:12px;padding:10px 0}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);min-width:0}
+.brand img{width:32px;height:32px;flex:none}
+.brand-name{font-family:var(--font-serif);font-size:20px;font-weight:600;white-space:nowrap}
+.brand-date{color:var(--muted);font-size:13px;white-space:nowrap}
+.nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 10px;-webkit-overflow-scrolling:touch;
+  -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 88%,transparent 100%)}
+.nav::-webkit-scrollbar{display:none}
+.nav a{flex:none;padding:8px 14px;border-radius:var(--r-pill);color:var(--muted);text-decoration:none;font-size:15px;font-weight:500;min-height:36px;display:inline-flex;align-items:center}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.page-hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
+.page-hero .kicker{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.page-hero h1{font-size:clamp(26px,5vw,34px);line-height:1.15;margin:8px 0 6px;letter-spacing:-.01em}
+.page-hero p.lede{color:var(--muted);margin:6px 0 0}
+.hero{background:linear-gradient(160deg,#FFF6EC 0%,#FFFFFF 60%);border:1px solid var(--border);border-radius:var(--r-xl);box-shadow:var(--shadow-card);padding:24px;margin:24px 0 8px}
+.hero .kicker{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.hero h1{font-size:clamp(28px,6vw,40px);line-height:1.1;margin:8px 0 6px;letter-spacing:-.01em}
+.hero h1 em{font-style:italic}
+.hero .hl{background:linear-gradient(transparent 55%,var(--highlight) 55%,var(--highlight) 92%,transparent 92%);padding:0 2px}
+.hero p.lede{color:var(--muted);margin:6px 0 16px}
+.hero ul{margin:0 0 18px;padding-left:20px}
+.hero li{margin:5px 0}
+.btn-primary{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:12px 22px;border-radius:var(--r-pill);font-size:15px;font-weight:600}
+.btn-primary:hover{background:var(--accent-dark)}
+.btn-ghost{display:inline-block;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);text-decoration:none;padding:10px 20px;border-radius:var(--r-pill);font-size:15px;font-weight:600}
+main section{padding:32px 0 8px;scroll-margin-top:84px}
+main section h2{font-size:clamp(24px,3vw,30px);line-height:1.15;margin:0 0 4px}
+.section-intro{color:var(--muted);margin:0 0 20px;font-size:15px}
+.section-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.section-head a{font-size:14px;white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:20px}
+.card h3{margin:0 0 6px;font-size:19px;line-height:1.3}
+.card .meta{color:var(--muted);font-size:13px;margin:0 0 10px}
+.card ul{margin:0 0 14px;padding-left:20px}
+.card li{margin:4px 0;font-size:15px}
+.card:hover{box-shadow:var(--shadow-lift)}
+.card .icon{font-size:26px}
+.searchbar{padding:14px 0 4px}
+.searchbar input{width:100%;padding:12px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);font-size:16px;font-family:var(--font-sans);background:var(--surface);color:var(--ink)}
+.count-line{color:var(--muted);font-size:13px;margin:8px 0 0;min-height:18px}
+details.edition{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);margin:0 0 12px;overflow:hidden}
+details.edition summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-weight:600}
+details.edition summary::-webkit-details-marker{display:none}
+details.edition summary .chev{margin-left:auto;color:var(--muted);transition:transform 150ms ease}
+details.edition[open ] summary .chev{transform:rotate(90deg)}
+details.edition .ed-part{font-size:15px}
+details.edition .ed-date{color:var(--muted);font-weight:500;font-size:14px}
+details.edition .ed-meta{color:var(--muted);font-weight:500;font-size:14px}
+.ed-body{border-top:1px solid var(--border)}
+.ed-body iframe{width:100%;border:0;display:block;background:var(--surface);min-height:320px}
+.frame-note{font-size:13px;color:var(--muted);margin:0 0 12px}
+.frame-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);overflow:hidden}
+.frame-wrap iframe{width:100%;border:0;display:block;background:var(--surface);min-height:320px}
+.archive-month{margin:0 0 12px}
+.archive-month summary{cursor:pointer;font-weight:600;padding:12px 4px;font-size:16px}
+.archive-month summary::-webkit-details-marker{display:none}
+.inline-content .wrap{max-width:none;margin:0;padding:0}
+.inline-content h2{font-size:20px;margin:0 0 10px}
+.inline-content .day{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin:0 0 12px}
+.inline-content .day h2{font-size:15px;margin:0 0 8px;color:var(--accent);font-family:var(--font-sans)}
+.inline-content .item{margin:6px 0}
+.inline-content .time{color:var(--muted);font-size:13px}
+.inline-content .note{font-size:13px;color:var(--muted)}
+.inline-content .check{background:var(--highlight-soft)}
+.inline-content ul{margin:6px 0 0;padding-left:20px}
+.inline-content li{margin:4px 0}
+.inline-content table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.inline-content th,.inline-content td{text-align:left;padding:10px 12px;font-size:14px;border-bottom:1px solid var(--border);vertical-align:top}
+.inline-content th{background:var(--surface-2);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.inline-content tr:last-child td{border-bottom:none}
+.inline-content .warn{color:var(--accent);font-weight:600}
+.inline-content .dow{color:var(--muted);font-size:12px}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:16px 18px;margin:0 0 12px}
+.result-card h3{margin:0 0 4px;font-size:17px}
+.result-card .meta{color:var(--muted);font-size:13px;margin:0 0 6px}
+.result-card p{margin:0;font-size:14px;color:var(--ink-soft)}
+footer{border-top:1px solid var(--border);padding:28px 0 40px;color:var(--muted);font-size:14px;margin-top:32px}
+footer a{font-weight:600}
+footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
+.no-results{color:var(--muted);padding:20px 0}
+@media (min-width:900px){
+  main section{padding:48px 0 8px}
+  .hero,.page-hero{padding:32px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Към съдържанието</a>
+<header class="site-header"><div class="container"><div class="header-row"><a class="brand" href="index.html"><img src="favicon.svg" alt="" width="32" height="32"><span class="brand-name">Моите дайджести</span></a><span class="brand-date">понеделник, 23 ноември 2026</span></div><nav class="nav" aria-label="Раздели"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="week.html">Седмицата</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html">RADAR</a><a href="cars.html">Коли</a><a href="aiplan.html" aria-current="page">AI план</a><a href="subs.html">Абонаменти</a><a href="search.html">🔍 Търсене</a></nav></div></header>
+<main id="main"><div class="container" id="top"><div class="page-hero"><p class="kicker">AI план</p><h1>AI план</h1><p class="lede">Какво уча и какво следва.</p></div></div><section><div class="container"><div class="inline-content"><div class="wrap">
+
+<header>
+  
+  <p>Последно обновяване: 17.11.2026. Без дати и срокове: теми, които се обогатяват според нуждите. Редът се определя от дневния ред, не от календар.</p>
+  <p>Състояние: Karthik KK е вън от плана. Udemy не е задължителен, всеки курс има безплатна алтернатива. Служебният Udemy акаунт е за кратко време, не се знае докога.</p>
+  <div class="chips">
+    <span class="chip">Без дати и срокове</span>
+    <span class="chip">Udemy: по желание</span>
+    <span class="chip">Karthik KK: отпада</span>
+    <span class="chip">Ново: курсове от радара на Wabi</span>
+  </div>
+</header>
+
+<h2>Състоянието сега</h2>
+<ul>
+  <li><b>Модел без дати и срокове</b> (от 16.11): Дневен ред, Контекст, Теми. Никой не те гони.</li>
+  <li><b>Karthik KK отпада</b> (17.11): бавен, повтаря много. Двата му курса са вън: promptfoo е купен (9,99 €, връщането отказано), но не се ползва; DeepEval е върнат.</li>
+  <li><b>Evals продължава без курс:</b> официална документация на DeepEval и promptfoo плюс Dataquest „Evaluating LLM Outputs".</li>
+  <li><b>Udemy не е задължителен:</b> всеки курс по-долу има безплатна алтернатива в таблицата. Служебният акаунт е удобство за кратко, не условие.</li>
+  <li><b>Ново от 17.11:</b> радарът на Wabi на компютъра (на всеки 3 дни) намира курсове извън Udemy: Google Skills, TAU, AWS, edX, Coursera. Те са в таблицата като алтернативи.</li>
+</ul>
+
+<h2>Темите: един поглед</h2>
+<p class="sub">Основният път е Udemy (по желание). Алтернативата е безплатна и покрива същото умение.</p>
+<table>
+  <tr><th>Тема</th><th>Основен път (Udemy, по желание)</th><th>Безплатна алтернатива</th></tr>
+  <tr><td><b>Evals</b><br>DeepEval + promptfoo</td><td>Няма курс. <span class="badge bad">Karthik вън</span></td><td>Официална документация на DeepEval и promptfoo + Dataquest „Evaluating LLM Outputs"</td></tr>
+  <tr><td><b>MCP сървър + демо</b></td><td><a href="https://www.udemy.com/course/model-context-protocol/">MCP Crash Course</a>, Eden Marco, 8 ч 41 мин</td><td><a href="https://www.skills.google/course_templates/1884">Build and Secure MCP Services on Cloud Run</a> (Google Skills, 4 ч) + <a href="https://testautomationu.applitools.com/building-custom-mcp-servers/">Building Custom MCP Servers for Quality Engineering</a> (TAU) + документация на MCP</td></tr>
+  <tr><td><b>Мулти-агент</b><br>LangGraph</td><td><a href="https://www.udemy.com/course/langgraph/">LangGraph</a>, Eden Marco, 7 ч 43 мин + <a href="https://www.udemy.com/course/langgraph-in-action-develop-advanced-ai-agents-with-llms/">LangGraph in Action</a>, Markus Lang, 3 ч 30 мин</td><td><a href="https://www.coursera.org/learn/agentic-ai-with-langchain-and-langgraph">Agentic AI with LangChain and LangGraph</a> (Coursera, около 11 ч, безплатен одит) + <a href="https://www.skills.google/course_templates/1833">Build Collaborative Multi-Agent Systems with ADK &amp; MCP</a> (Google Skills, 30 мин) + документация на LangGraph</td></tr>
+  <tr><td><b>LLMOps</b><br>локални модели</td><td><a href="https://www.udemy.com/course/ultimate-llmops-bootcamp/">Ultimate LLMOps Bootcamp</a>, Gourav Shah, 12 ч 30 мин</td><td><a href="https://www.skills.google/course_templates/1782">AgentOps</a> (Google Skills, 5 ч) + <a href="https://www.skills.google/course_templates/927">MLOps for Generative AI</a> (30 мин) + <a href="https://www.skills.google/course_templates/1080">Model Evaluation</a> (2 ч) + документация на vLLM</td></tr>
+  <tr><td><b>Агент в облака</b><br>Docker</td><td><a href="https://www.udemy.com/course/mastering-aiml-with-docker/">Ultimate Docker Bootcamp</a>, Gourav Shah, 6 ч</td><td><a href="https://testautomationu.applitools.com/scaling-tests-with-docker/">Scaling Tests with Docker</a> (TAU) + документация на Docker</td></tr>
+  <tr><td><b>TypeScript</b><br>успоредно, нисък приоритет</td><td><a href="https://mastra.ai/learn">Официален курс на Mastra</a>, ~1 ч 30 мин, безплатен</td><td>Същият, той си е безплатен. TypeScript пада на пазара (30 срещу 46 обяви).</td></tr>
+  <tr><td><b>HealCheck</b><br>опакване</td><td>Без нов курс: evals + MCP от горните теми</td><td>—</td></tr>
+</table>
+
+<h2>Курсовете (само активните)</h2>
+<p class="sub">Всеки е по желание. Заглавието води към курса.</p>
+
+<div class="card mcp">
+  <h3><a href="https://www.udemy.com/course/model-context-protocol/">MCP Crash Course</a> <span class="badge ok">Eden Marco</span></h3>
+  <p class="meta">8 ч 41 мин · Udemy · може да се слуша от служебния акаунт</p>
+  <p>Пълната MCP спецификация: сървъри и клиенти, tools, resources, prompts, FastMCP, MCP клиент в LangGraph агент, Docker, OAuth, деплой в Cloudflare, сигурност. За демото „MCP сървър с Playwright тестове".</p>
+</div>
+
+<div class="card rag">
+  <h3><a href="https://www.udemy.com/course/langgraph/">LangGraph</a> <span class="badge ok">Eden Marco</span></h3>
+  <p class="meta">7 ч 43 мин · Udemy · може да се слуша от служебния акаунт</p>
+  <p>Агентни шаблони (Reflection, Reflexion, ReAct) и Agentic RAG (Corrective, Self, Adaptive). Плюс persistence, interrupts, асинхронно изпълнение, LangGraph Studio, LangSmith Deployment.</p>
+</div>
+
+<div class="card rag">
+  <h3><a href="https://www.udemy.com/course/langgraph-in-action-develop-advanced-ai-agents-with-llms/">LangGraph in Action</a> <span class="badge ok">Markus Lang</span></h3>
+  <p class="meta">3 ч 30 мин · Udemy · може да се слуша от служебния акаунт</p>
+  <p>Най-краткият плътен курс по LangGraph: състояние, памет, human-in-the-loop, мулти-агенти, накрая пълен стек с FastAPI + Docker. Задълбочаване след горния или първи избор при притиснато време.</p>
+</div>
+
+<div class="card mcp">
+  <h3><a href="https://www.udemy.com/course/mastering-aiml-with-docker/">Ultimate Docker Bootcamp</a> <span class="badge ok">Gourav Shah</span></h3>
+  <p class="meta">~6 ч · Udemy · може да се слуша от служебния акаунт</p>
+  <p>Docker за AI работа: Dockerfiles, Compose, Docker Model Runner, MCP Toolkit, FastAPI в контейнер, CI/CD за образи. Docker частта от теста за агент в облака.</p>
+</div>
+
+<div class="card evals">
+  <h3><a href="https://www.udemy.com/course/ultimate-llmops-bootcamp/">Ultimate LLMOps Bootcamp</a> <span class="badge ok">Gourav Shah</span></h3>
+  <p class="meta">12 ч 30 мин · Udemy · малко отзиви (9) · може да се слуша от служебния акаунт</p>
+  <p>Една система („OpsMate") през целия LLMOps цикъл: токени, KV кеш, квантизация, OpenAI-съвместим API, RAG, golden set, LoRA с eval gate, деплой в Kubernetes, observability, autoscaling, GitOps, gateway с бюджети и guardrails. Уговорка: vLLM поименно не се преподава.</p>
+</div>
+
+<div class="card ts">
+  <h3><a href="https://mastra.ai/learn">Build Your First AI Agent in TypeScript</a> <span class="badge ok">Mastra, официален, безплатен</span></h3>
+  <p class="meta">~1 ч 30 мин · mastra.ai/learn</p>
+  <p>Agent loop, tools, MCP, памет, context engineering, traces и scoring, с разгръщане на реален агент. Най-директният път към TS теста.</p>
+</div>
+
+<h2>Лектори: кратко</h2>
+<ul>
+  <li><b>Eden Marco:</b> минава, най-силен профил. Google Cloud, LangChain Ambassador, бърз и плътен.</li>
+  <li><b>Gourav Shah:</b> минава. 15+ години инфраструктура и обучения, Adobe, Linux Foundation курсове.</li>
+  <li><b>Markus Lang:</b> минава, втори курс. Кратък и плътен формат.</li>
+  <li><b>Karthik KK:</b> <span class="badge bad">Отпада</span> бавен, повтаря много (пряк опит, 17.11).</li>
+  <li><b>Rahul Shetty:</b> <span class="badge bad">Отпада</span> дълги курсове, оплакване „говори бързо и се повтаря".</li>
+</ul>
+
+<h2>Какво още няма</h2>
+<ul>
+  <li><b>vLLM поименно:</b> нито един курс не го преподава като сървър. Учи се от документацията и от теста на една 3090.</li>
+  <li><b>Kubernetes и облак деплой за агенти:</b> Docker курсът покрива само Docker. Празнина.</li>
+  <li><b>Статистика за evals:</b> confidence intervals, размер на извадката. Само безплатни академични източници.</li>
+  <li><b>Verifier „по подразбиране FAIL":</b> най-близо е promptfoo от документацията, като изричен шаблон не се преподава никъде.</li>
+</ul>
+
+<footer>
+  <p>Метод: страници на курсове в Udemy (четени директно на 05.11.2026), каталози с проверени данни (CourseSpeak, CourseDuck, Class Central), независими ревюта, профили на лекторите извън Udemy и радарът на Wabi на компютъра (17.11.2026). Пълното проучване: <i>udemy-research-2026-11-05.md</i> при целта за AI умения. Купен е само promptfoo курсът (9,99 €), но той не е в плана. Преди да се купува каквото и да е, се проверява дали служебният акаунт още е активен.</p>
+</footer>
+
+</div></div></div></section></main>
+<footer><div class="container"><div class="foot-nav"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="week.html">Седмицата</a><a href="vreme.html">Времето</a><a href="podari.html">Подари Време</a><a href="radar.html">RADAR</a><a href="cars.html">Коли</a><a href="aiplan.html" aria-current="page">AI план</a><a href="subs.html">Абонаменти</a><a href="search.html">🔍 Търсене</a></div><p>Последно обновяване: 23.11.2026 08:56 · Обновява се автоматично на всеки час.</p><p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p></div></footer>
+<script>
+// Менюто се скролва до активната страница
+(function(){
+  var cur = document.querySelector('.nav a[aria-current="page"]');
+  if (cur) cur.scrollIntoView({inline:'center', block:'nearest'});
+})();
+// Зареждане на iframe при първо отваряне на <details>
+(function(){
+  function loadFrame(details){
+    var f = details.querySelector('iframe[data-src]');
+    if (f && !f.src) f.src = f.dataset.src;
+  }
+  document.querySelectorAll('details.edition').forEach(function(d){
+    if (d.open) loadFrame(d);
+    d.addEventListener('toggle', function(){ if (d.open) { loadFrame(d); setTimeout(fitIframes, 300); } });
+  });
+  document.querySelectorAll('[data-open-details]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var d = document.getElementById(btn.dataset.openDetails);
+      if (d && !d.open) { d.open = true; loadFrame(d); }
+    });
+  });
+})();
+// Дълбок линк към издание/дайджест: отваря го при зареждане
+(function(){
+  var h = location.hash && location.hash.slice(1);
+  if (!h) return;
+  var el = document.getElementById(h);
+  if (el && el.tagName === 'DETAILS') {
+    el.open = true;
+    var f = el.querySelector('iframe[data-src]');
+    if (f && !f.src) f.src = f.dataset.src;
+    setTimeout(function(){ el.scrollIntoView({block:'start'}); fitIframes(); }, 350);
+  }
+})();
+// Търсене на страницата (новини/събития): филтрира картите по data-search
+(function(){
+  var q = document.getElementById('q');
+  if (!q) return;
+  var countEl = document.getElementById('count');
+  var noRes = document.getElementById('no-results');
+  function apply(){
+    var needle = (q.value || '').trim().toLowerCase();
+    var visible = 0, total = 0;
+    document.querySelectorAll('[data-search]').forEach(function(card){
+      total++;
+      var hit = !needle || card.dataset.search.toLowerCase().indexOf(needle) !== -1;
+      card.hidden = !hit;
+      if (hit) visible++;
+    });
+    document.querySelectorAll('.archive-month').forEach(function(m){
+      var anyVisible = false;
+      m.querySelectorAll('[data-search]').forEach(function(c){ if (!c.hidden) anyVisible = true; });
+      m.hidden = !anyVisible && needle !== '';
+    });
+    if (countEl) countEl.textContent = needle ? ('Намерени: ' + visible + ' от ' + total) : '';
+    if (noRes) noRes.hidden = visible > 0 || !needle;
+  }
+  q.addEventListener('input', apply);
+})();
+// Автоматична височина на вградените страници: долният ръб на последния
+// видим елемент в тялото (не scrollHeight — той брои и празното отдолу)
+function fitIframes(){
+  document.querySelectorAll('iframe[data-autosize]').forEach(function(f){
+    try {
+      if (!f.contentWindow || !f.contentDocument || !f.contentDocument.body) return;
+      var doc = f.contentDocument, view = doc.defaultView, best = 0;
+      var kids = doc.body.children;
+      for (var i = 0; i < kids.length; i++) {
+        var el = kids[i];
+        if (view.getComputedStyle(el).display === 'none') continue;
+        var r = el.getBoundingClientRect();
+        if (!r.height && !r.width) continue;
+        var bottom = r.top + view.scrollY + r.height;
+        if (bottom > best) best = bottom;
+      }
+      var h = best > 100 ? best : doc.body.scrollHeight;
+      if (h > 100) f.style.height = (h + 8) + 'px';
+    } catch (e) { /* cross-origin или още не е зареден — пропускаме */ }
+  });
+}
+window.addEventListener('load', function(){ fitIframes(); setInterval(fitIframes, 900); });
+window.addEventListener('resize', fitIframes);
+</script>
+</body>
+</html>

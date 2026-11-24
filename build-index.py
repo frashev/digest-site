@@ -1026,9 +1026,11 @@ window.addEventListener('resize', fitIframes);
       b.classList.add('on'); cat = b.dataset.cat; apply();
     });
   });
-  // Дни: кликът ВКЛЮЧВА/ИЗКЛЮЧВА деня — могат да се избират няколко наведнъж
-  // (един ден, два дни, всички). „Всички дни" връща всички. Ако се изключи
-  // последният избран ден, се връщат всички дни (празен избор не показва нищо).
+  // Дни: кликът ИЗБИРА дни — могат да се избират няколко наведнъж (един ден,
+  // два дни, всички). Когато всички са избрани, клик изолира само този ден;
+  // следващ клик върху друг ден го ДОБАВЯ към избора; клик върху избран ден
+  // го маха. „Всички дни" връща всички. Ако се махне последният избран ден,
+  // се връщат всички дни (празен избор не показва нищо).
   function setDays(pred){
     var all = true;
     tb.querySelectorAll('#newsDayChips .fchip').forEach(function(b){
@@ -1049,6 +1051,8 @@ window.addEventListener('resize', fitIframes);
       if (activeDays.has(d)) {
         activeDays.delete(d); b.classList.remove('on');
         if (activeDays.size === 0) { setDays(function(){ return true; }); return; }
+      } else if (activeDays.size === dayTotal) {
+        setDays(function(x){ return x === d; }); return;
       } else {
         activeDays.add(d); b.classList.add('on');
       }
@@ -1161,16 +1165,22 @@ window.addEventListener('resize', fitIframes);
   toggleBtn('evFreeBtn', function(){ return freeOnly; }, function(v){ freeOnly = v; });
   toggleBtn('evNewBtn', function(){ return newOnly; }, function(v){ newOnly = v; });
   toggleBtn('evTimeBtn', function(){ return timeOnly; }, function(v){ timeOnly = v; });
-  // Дни: кликът ВКЛЮЧВА/ИЗКЛЮЧВА деня — могат да се избират няколко наведнъж
-  // (един ден, два дни, всички). Ако се изключи последният избран ден,
-  // се връщат всички дни (празен избор не показва нищо).
+  // Дни: кликът ИЗБИРА дни — могат да се избират няколко наведнъж (един ден,
+  // два дни, всички). Когато всички са избрани, клик изолира само този ден;
+  // следващ клик върху друг ден го ДОБАВЯ към избора; клик върху избран ден
+  // го маха. Ако се махне последният избран ден, се връщат всички дни.
   tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
       var d = b.dataset.day;
-      if (activeDays.has(d)) { activeDays.delete(d); b.classList.remove('on'); }
-      else { activeDays.add(d); b.classList.add('on'); }
-      if (activeDays.size === 0) setDays(function(){ return true; });
-      else apply();
+      if (activeDays.has(d)) {
+        activeDays.delete(d); b.classList.remove('on');
+        if (activeDays.size === 0) { setDays(function(){ return true; }); return; }
+      } else if (activeDays.size === tb.querySelectorAll('#evDayChips .fchip').length) {
+        setDays(function(x){ return x === d; }); return;
+      } else {
+        activeDays.add(d); b.classList.add('on');
+      }
+      apply();
     });
   });
   function setDays(pred){
@@ -1385,8 +1395,10 @@ PODARI_JS = """
   var activeKey = 'date';
   function cmpVal(a, b, key){
     var va = a.dataset[key] || '', vb = b.dataset[key] || '';
-    var na = parseFloat(va), nb = parseFloat(vb);
-    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    // Числово сравнение САМО при изцяло числови стойности — parseFloat върху
+    // дата като "2026-11-28" връща 2026 и всички дати от една година стават равни.
+    var num = /^-?\d+(\.\d+)?$/;
+    if (num.test(va) && num.test(vb)) return parseFloat(va) - parseFloat(vb);
     return va < vb ? -1 : va > vb ? 1 : 0;
   }
   function sortBy(key, dir){

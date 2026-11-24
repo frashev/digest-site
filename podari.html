@@ -456,11 +456,15 @@ window.addEventListener('resize', fitIframes);
     b.addEventListener('click', function(){
       var d = b.dataset.day;
       if (d === 'all') { setDays(function(){ return true; }); return; }
+      if (activeDays.size === dayTotal) {
+        // Всички са избрани — клик изолира само този ден. Проверката за
+        // „всички избрани" е ПЪРВА: has(d) преди нея прави изолирането
+        // недостижимо (при всички избрани has(d) винаги е вярно).
+        setDays(function(x){ return x === d; }); return;
+      }
       if (activeDays.has(d)) {
         activeDays.delete(d); b.classList.remove('on');
         if (activeDays.size === 0) { setDays(function(){ return true; }); return; }
-      } else if (activeDays.size === dayTotal) {
-        setDays(function(x){ return x === d; }); return;
       } else {
         activeDays.add(d); b.classList.add('on');
       }
@@ -580,11 +584,15 @@ window.addEventListener('resize', fitIframes);
   tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
       var d = b.dataset.day;
+      if (activeDays.size === tb.querySelectorAll('#evDayChips .fchip').length) {
+        // Всички са избрани — клик изолира само този ден. Проверката за
+        // „всички избрани" е ПЪРВА: has(d) преди нея прави изолирането
+        // недостижимо (при всички избрани has(d) винаги е вярно).
+        setDays(function(x){ return x === d; }); return;
+      }
       if (activeDays.has(d)) {
         activeDays.delete(d); b.classList.remove('on');
         if (activeDays.size === 0) { setDays(function(){ return true; }); return; }
-      } else if (activeDays.size === tb.querySelectorAll('#evDayChips .fchip').length) {
-        setDays(function(x){ return x === d; }); return;
       } else {
         activeDays.add(d); b.classList.add('on');
       }

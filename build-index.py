@@ -247,33 +247,50 @@ def fmt_drive(mins):
     return "%d мин" % mins
 
 
+def _dep_mins(dep_txt):
+    """Първият час ЧЧ:ММ от текста за тръгване, в минути от полунощ (9999 ако няма)."""
+    m = re.search(r"(\d{1,2}):(\d{2})", dep_txt or "")
+    return int(m.group(1)) * 60 + int(m.group(2)) if m else 9999
+
+
 def podari_near_table(podari_json, today_iso, trips_url):
     """Таблица „Списък по близост до София": предстоящите посещения (от София
-    и местните групи), подредени по разстояние от София — най-близките първи.
-    Колони: дата, място, разстояние, час на тръгване, дейност, линк за записване."""
+    и местните групи), подредени по подразбиране ХРОНОЛОГИЧНО (дата, после час
+    на тръгване) — най-близките по време първи. Колоните Дата / Разстояние /
+    Тръгване се сортират от малките бутони в заглавията им (клик = смяна на
+    посоката; вторичните ключове са дата, час и място)."""
     rows = []
     for t in podari_json.get("trips_sofia", []):
         if t["date"] < today_iso:
             continue
-        rows.append({"date": t["date"], "place": t["place"],
-                     "dep": "%s · %s" % (t["dep"], t["point"]),
+        dep = "%s · %s" % (t["dep"], t["point"])
+        rows.append({"date": t["date"], "place": t["place"], "dep": dep,
+                     "dep_mins": _dep_mins(dep),
+                     "km": PV_GEO.get(t["place"], (0, 99999))[1],
                      "places": t["places"], "url": trips_url})
     for t in podari_json.get("trips_local", []):
         if t["date"] < today_iso:
             continue
         local_only = t.get("local_only", True)
-        rows.append({"date": t["date"], "place": t["place"],
-                     "dep": ("местно · пред дома %s" % t["home"] if local_only
-                             else "пред дома %s" % t["home"]),
+        dep = ("местно · пред дома %s" % t["home"] if local_only
+               else "пред дома %s" % t["home"])
+        rows.append({"date": t["date"], "place": t["place"], "dep": dep,
+                     "dep_mins": _dep_mins(dep),
+                     "km": PV_GEO.get(t["place"], (0, 99999))[1],
                      "places": t["places"], "url": trips_url})
     if not rows:
         return ""
-    rows.sort(key=lambda r: (PV_GEO.get(r["place"], (0, 9999))[1],
-                             r["date"], r["place"]))
+    rows.sort(key=lambda r: (r["date"], r["dep_mins"], r["place"]))
     out = ['<section id="pv-near-sofia"><div class="container"><h2>Списък по близост до София</h2>'
-           '<p class="meta">Предстоящите посещения, подредени по разстояние от София — най-близките първи.</p>'
-           '<div class="pv-table-wrap"><table class="pv-table">'
-           '<tr><th>Дата</th><th>Място</th><th>Разстояние</th><th>Тръгване</th><th>Дейност</th><th></th></tr>']
+           '<p class="meta">Предстоящите посещения, подредени по дата — най-близките по време първи. '
+           'Сортирай от бутоните в заглавията на колоните: по дата, по разстояние или по час на тръгване.</p>'
+           '<div class="pv-table-wrap"><table class="pv-table" id="pvNearTable">'
+           '<thead><tr>'
+           '<th><button class="sort-btn" data-sort="date" data-dir="asc">Дата <span class="sort-arrow">▲</span></button></th>'
+           '<th>Място</th>'
+           '<th><button class="sort-btn" data-sort="km" data-dir="asc">Разстояние <span class="sort-arrow"></span></button></th>'
+           '<th><button class="sort-btn" data-sort="dep" data-dir="asc">Тръгване <span class="sort-arrow"></span></button></th>'
+           '<th>Дейност</th><th></th></tr></thead><tbody>']
     for r in rows:
         dt = datetime.strptime(r["date"], "%Y-%m-%d")
         g = PV_GEO.get(r["place"])
@@ -284,11 +301,13 @@ def podari_near_table(podari_json, today_iso, trips_url):
             signup = ('<a href="%s" target="_blank" rel="noopener">Запиши се →</a>'
                       % esc(r["url"]))
         out.append(
-            '<tr><td>%s, %s</td><td>%s</td><td>%s</td><td>%s</td><td>Посещение при децата</td><td>%s</td></tr>'
-            % (weekday_bg(dt)[:3], dt.strftime("%d.%m"), esc(r["place"]), dist,
+            '<tr data-date="%s" data-km="%d" data-dep="%d" data-place="%s">'
+            '<td>%s, %s</td><td>%s</td><td>%s</td><td>%s</td><td>Посещение при децата</td><td>%s</td></tr>'
+            % (r["date"], r["km"], r["dep_mins"], esc(r["place"]),
+               weekday_bg(dt)[:3], dt.strftime("%d.%m"), esc(r["place"]), dist,
                esc(r["dep"]), signup)
         )
-    out.append('</table></div>'
+    out.append('</tbody></table></div>'
                '<p class="meta">Точната програма за всяко посещение е на страницата за записване — след вход '
                'в профила на podarivreme.org. „Местно“ означава, че групата е от града и няма '
                'организирано тръгване от София.</p>'
@@ -788,6 +807,9 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .pv-table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
 .pv-table td,.pv-table th{padding:7px 8px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}
 .pv-table th{color:#888;font-size:12px}
+.sort-btn{background:none;border:0;padding:0;font:inherit;font-weight:700;color:#888;cursor:pointer;touch-action:manipulation;white-space:nowrap}
+.sort-btn:hover{color:var(--accent)}
+.sort-btn .sort-arrow{color:var(--accent);font-size:10px}
 @media (max-width:600px){.podari-map svg{min-width:640px}}
 .podari-note{font-size:13px;color:var(--muted)}
 .pv-big{font-family:var(--font-serif);font-size:36px;line-height:1.1;color:var(--accent);font-weight:700;margin:0 0 4px}
@@ -1346,6 +1368,53 @@ PODARI_JS = """
     });
   });
   render();
+})();
+// Таблица „Списък по близост до София": сортиране по колони — дата,
+// разстояние (км) или час на тръгване. Първи клик върху колона = нарастващо,
+// втори клик = намаляващо; стрелката показва активната колона и посоката.
+(function(){
+  var tbl = document.getElementById('pvNearTable');
+  if (!tbl) return;
+  var tbody = tbl.querySelector('tbody');
+  if (!tbody) return;
+  var CHAINS = {
+    date: ['date', 'dep', 'place'],
+    km: ['km', 'date', 'dep'],
+    dep: ['dep', 'date', 'place']
+  };
+  var activeKey = 'date';
+  function cmpVal(a, b, key){
+    var va = a.dataset[key] || '', vb = b.dataset[key] || '';
+    var na = parseFloat(va), nb = parseFloat(vb);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return va < vb ? -1 : va > vb ? 1 : 0;
+  }
+  function sortBy(key, dir){
+    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+    var chain = CHAINS[key] || [key];
+    rows.sort(function(a, b){
+      var c = 0;
+      for (var i = 0; i < chain.length && c === 0; i++) c = cmpVal(a, b, chain[i]);
+      return dir === 'desc' ? -c : c;
+    });
+    rows.forEach(function(r){ tbody.appendChild(r); });
+  }
+  tbl.querySelectorAll('th .sort-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.dataset.sort;
+      var dir = (key === activeKey && btn.dataset.dir === 'asc') ? 'desc' : 'asc';
+      activeKey = key;
+      tbl.querySelectorAll('th .sort-btn').forEach(function(x){
+        x.dataset.dir = 'asc';
+        var ar = x.querySelector('.sort-arrow');
+        if (ar) ar.textContent = '';
+      });
+      btn.dataset.dir = dir;
+      var ar = btn.querySelector('.sort-arrow');
+      if (ar) ar.textContent = dir === 'asc' ? '▲' : '▼';
+      sortBy(key, dir);
+    });
+  });
 })();
 """
 

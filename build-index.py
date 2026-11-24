@@ -940,7 +940,11 @@ window.addEventListener('resize', fitIframes);
   var q = document.getElementById('q');
   var countEl = document.getElementById('count');
   var noRes = document.getElementById('no-results');
-  var cat = 'all', day = 'all';
+  var cat = 'all';
+  var dayChips = tb.querySelectorAll('#newsDayChips .fchip[data-day]:not([data-day="all"])');
+  var dayTotal = dayChips.length;
+  var activeDays = new Set();
+  dayChips.forEach(function(b){ activeDays.add(b.dataset.day); });
   function apply(){
     var needle = (q.value || '').trim().toLowerCase();
     var visible = 0, total = 0;
@@ -948,7 +952,7 @@ window.addEventListener('resize', fitIframes);
       total++;
       var okQ = !needle || c.dataset.search.toLowerCase().indexOf(needle) !== -1;
       var okCat = cat === 'all' || c.dataset.cat === cat;
-      var okDay = day === 'all' || c.dataset.day === day;
+      var okDay = activeDays.has(c.dataset.day);
       var hit = okQ && okCat && okDay;
       c.hidden = !hit;
       if (hit) visible++;
@@ -965,7 +969,7 @@ window.addEventListener('resize', fitIframes);
       var sp = s.querySelector('h2 .count');
       if (sp) sp.textContent = '· ' + vis + ' новини';
     });
-    var filtered = needle || cat !== 'all' || day !== 'all';
+    var filtered = needle || cat !== 'all' || activeDays.size !== dayTotal;
     if (countEl) countEl.textContent = filtered ? ('Показани: ' + visible + ' от ' + total) : '';
     if (noRes) noRes.hidden = visible > 0;
   }
@@ -1000,19 +1004,44 @@ window.addEventListener('resize', fitIframes);
       b.classList.add('on'); cat = b.dataset.cat; apply();
     });
   });
+  // Дни: кликът ВКЛЮЧВА/ИЗКЛЮЧВА деня — могат да се избират няколко наведнъж
+  // (един ден, два дни, всички). „Всички дни" връща всички. Ако се изключи
+  // последният избран ден, се връщат всички дни (празен избор не показва нищо).
+  function setDays(pred){
+    var all = true;
+    tb.querySelectorAll('#newsDayChips .fchip').forEach(function(b){
+      if (b.dataset.day === 'all') return;
+      var on = pred(b.dataset.day);
+      b.classList.toggle('on', on);
+      if (on) activeDays.add(b.dataset.day); else activeDays.delete(b.dataset.day);
+      if (!on) all = false;
+    });
+    var allBtn = tb.querySelector('#newsDayChips .fchip[data-day="all"]');
+    if (allBtn) allBtn.classList.toggle('on', all);
+    apply();
+  }
   tb.querySelectorAll('#newsDayChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
-      tb.querySelectorAll('#newsDayChips .fchip').forEach(function(x){ x.classList.remove('on'); });
-      b.classList.add('on'); day = b.dataset.day; apply();
+      var d = b.dataset.day;
+      if (d === 'all') { setDays(function(){ return true; }); return; }
+      if (activeDays.has(d)) {
+        activeDays.delete(d); b.classList.remove('on');
+        if (activeDays.size === 0) { setDays(function(){ return true; }); return; }
+      } else {
+        activeDays.add(d); b.classList.add('on');
+      }
+      var allBtn = tb.querySelector('#newsDayChips .fchip[data-day="all"]');
+      if (allBtn) allBtn.classList.toggle('on', activeDays.size === dayTotal);
+      apply();
     });
   });
   var todayBtn = document.getElementById('newsToday');
   if (todayBtn) todayBtn.addEventListener('click', function(){
     var d = new Date();
     var dd = String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0');
-    day = dd;
-    tb.querySelectorAll('#newsDayChips .fchip').forEach(function(x){ x.classList.toggle('on', x.dataset.day === dd); });
-    apply();
+    var found = false;
+    tb.querySelectorAll('#newsDayChips .fchip').forEach(function(x){ if (x.dataset.day === dd) found = true; });
+    if (found) setDays(function(x){ return x === dd; });
   });
   q.addEventListener('input', apply);
 })();
@@ -1110,16 +1139,16 @@ window.addEventListener('resize', fitIframes);
   toggleBtn('evFreeBtn', function(){ return freeOnly; }, function(v){ freeOnly = v; });
   toggleBtn('evNewBtn', function(){ return newOnly; }, function(v){ newOnly = v; });
   toggleBtn('evTimeBtn', function(){ return timeOnly; }, function(v){ timeOnly = v; });
-  // Дни: един клик = САМО този ден (втори клик на същия ден = всички дни).
-  // Преди чиповете бяха превключватели и един клик МАХАШЕ деня — объркващо.
+  // Дни: кликът ВКЛЮЧВА/ИЗКЛЮЧВА деня — могат да се избират няколко наведнъж
+  // (един ден, два дни, всички). Ако се изключи последният избран ден,
+  // се връщат всички дни (празен избор не показва нищо).
   tb.querySelectorAll('#evDayChips .fchip').forEach(function(b){
     b.addEventListener('click', function(){
       var d = b.dataset.day;
-      if (activeDays.size === 1 && activeDays.has(d)) {
-        setDays(function(){ return true; });
-      } else {
-        setDays(function(x){ return x === d; });
-      }
+      if (activeDays.has(d)) { activeDays.delete(d); b.classList.remove('on'); }
+      else { activeDays.add(d); b.classList.add('on'); }
+      if (activeDays.size === 0) setDays(function(){ return true; });
+      else apply();
     });
   });
   function setDays(pred){
@@ -1760,7 +1789,7 @@ def main():
             )
         news_day_chips = ('<button class="fchip on" data-day="all">Всички дни</button>' +
                           "".join(
-                              '<button class="fchip" data-day="%s">%s %s</button>'
+                              '<button class="fchip on" data-day="%s">%s %s</button>'
                               % (day, weekday_bg(day_date(day, ref_date)).capitalize()[:3], day)
                               for day in sorted(days, reverse=True)))
         news_body = (

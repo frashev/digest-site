@@ -1528,7 +1528,7 @@ def main():
          "weather.html", "🌤️"),
         ("assistants", "AI асистенти", "AI асистенти: радар",
          "43 лични AI асистенти — кои работят от България, цени и източници.",
-         "assistants.html", "🤖"),
+         "assistants-content.html", "🤖"),
     ]
     scout_files = sorted(n for n in singles if n.startswith("scout-") and n.endswith(".html"))
     if scout_files:

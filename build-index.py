@@ -3,7 +3,7 @@
 # Дизайн: mobile-first, топла хартия (#FBF9F3), един тухлен акцент (#9C493D),
 # лепкаво меню с къси етикети (активната страница е маркирана, менюто се
 # скролва до нея). Всяка страница е отделна:
-# index (начало), news (новини), events (събития), vreme, podari,
+# index (начало), news (новини), events (събития), vreme,
 # scout (ако има), search (глобално търсене).
 # ДАННИТЕ СЕ ЧЕТАТ НА СТРАНИЦАТА, БЕЗ ОТВАРЯНЕ НА HTML ФАЙЛОВЕ:
 # - новини: статиите от най-новото издание се парсват и се показват директно
@@ -11,12 +11,12 @@
 # - събития: всички събрани събития от events-registry.json, от днес нататък,
 #   подредени по дни; старите не се показват; дайджест файловете не се ползват.
 # - време: weather.html се вгражда директно (почасова прогноза 24ч x 7 дни).
-# - Подари Време: динамична JS страница — чете podari-trips.json и показва
-#   само предстоящи посещения и обучения; миналите дати изобщо не се виждат.
+# - Подари Време: СКРИТО от сайта (25.11.2026, по искане на Philippe); източниците
+#   остават локално (podari-trips.json, podari-site.json, podari-map.html).
 # Малките файлове без скриптове се вграждат директно. Глобалното търсене
 # чете search.json. Без външни зависимости. Пуска се от publish.ps1 на PC-то.
 # Изход: index.html, news.html, events.html, vreme.html,
-# podari.html, scout.html,
+# scout.html,
 # search.html, search.json, feed.xml.
 import html as htmlmod
 import json
@@ -747,7 +747,7 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
 }
-/* v3: данни директно на страницата — време, новини, събития, Подари Време */
+/* v3: данни директно на страницата — време, новини, събития */
 .wx-day{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-card);margin:0 0 14px;padding:16px}
 .wx-head{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;justify-content:space-between;margin-bottom:10px}
 .wx-date{font-size:18px;font-weight:700;font-family:var(--font-serif)}
@@ -1239,7 +1239,7 @@ window.addEventListener('resize', fitIframes);
     'pv-podcast':'Подкаст „Подарени истории" и бюлетин „Доброволчески вести".',
     'pv-support':'Дари — 15 евро са 20 км път, 30 евро са урок за две деца, 50 евро са половината път до Враца за 15 доброволци.',
     'pv-contacts':'Телефон, имейл и адрес на фондацията.'};
-  var TIPS_BY_TEXT = {'Днес накратко':'Времето днес, следващото събитие и следващото посещение на Подари Време.',
+  var TIPS_BY_TEXT = {'Днес накратко':'Времето днес и следващото събитие.',
     'Тази седмица':'Брой събития за всеки ден от седмицата — натисни деня, за да видиш събитията.'};
   heads.forEach(function(h, i){
     if (!h.id) h.id = 'sec-' + (i + 1);
@@ -1523,6 +1523,8 @@ def main():
     # RADAR, Коли и AI план са СКРИТИ от публичния сайт (25.11.2026, по искане
     # на Philippe — лична информация); източниците им остават локално и
     # не се качват в репото.
+    # Подари Време е свалено изцяло от сайта на 25.11.2026 (също по негово
+    # искане); кодът за страницата е запазен, но вече не се изпълнява.
     single_defs = [
         ("vreme", "Времето", "Времето в София", "Прогноза за следващите дни.",
          "weather.html", "🌤️"),
@@ -1546,7 +1548,6 @@ def main():
              ("events", "Събития", "events.html")]
     for sec_id, nav_label, _t, _i, _f, _e in single_defs:
         pages.append((sec_id, nav_label, sec_id + ".html"))
-    pages.insert(4, ("podari", "Подари Време", "podari.html"))
     pages.append(("search", "🔍 Търсене", "search.html"))
 
     updated_ts = 0
@@ -1573,42 +1574,6 @@ def main():
     articles = []
     if news:
         articles = parse_news_articles(texts[news[-1]["name"]])
-    podari_json_ok = os.path.exists(os.path.join(SITE_DIR, "podari-trips.json"))
-    podari_items = []
-    if podari_json_ok:
-        with open(os.path.join(SITE_DIR, "podari-trips.json"), encoding="utf-8") as f:
-            podari_json = json.load(f)
-        trips_url = podari_json.get("trips_url", "https://www.podarivreme.org/trips")
-        brief_url = podari_json.get("brief_url",
-                                    "https://www.podarivreme.org/help?tab=briefings&is_briefing=1")
-        for t in podari_json.get("trips_sofia", []):
-            podari_items.append({"kind": "sofia", "cat": "От София", "date": t["date"],
-                                 "place": t["place"],
-                                 "meta": "Тръгване: %s · Пред дома: %s · %s"
-                                         % (t["dep"], t["home"], t["point"]),
-                                 "places": t["places"], "url": trips_url})
-        for t in podari_json.get("trips_local", []):
-            local_only = t.get("local_only", True)
-            podari_items.append({"kind": "local", "cat": "Местни групи", "date": t["date"],
-                                 "place": t["place"],
-                                 "meta": "Среща пред дома: %s (%s)"
-                                         % (t["home"], "местна група — без тръгване от София"
-                                            if local_only else
-                                            "без организирано тръгване от София"),
-                                 "places": t["places"], "url": trips_url})
-        for t in podari_json.get("trainings", []):
-            podari_items.append({"kind": "training", "cat": "Обучения", "date": t["date"],
-                                 "place": "Обучение за нови доброволци",
-                                 "meta": "Онлайн, около 1 час · %s" % t.get("time", "18:00"),
-                                 "places": None, "url": brief_url})
-        podari_items = [it for it in podari_items if it["date"] >= today_iso]
-        podari_items.sort(key=lambda it: (it["date"], it["place"]))
-    podari_site = {}
-    ps_path = os.path.join(SITE_DIR, "podari-site.json")
-    if os.path.exists(ps_path):
-        with open(ps_path, encoding="utf-8") as f:
-            podari_site = json.load(f)
-
     def nav_html(active):
         out = []
         for page_id, label, href in pages:
@@ -1704,7 +1669,7 @@ def main():
                fmt_date(datetime.strptime(last_iso, "%Y-%m-%d")))
         )
 
-    # „Днес накратко" — време, следващо събитие, следващо посещение на Подари Време
+    # „Днес накратко" — време и следващо събитие
     glance_cards = []
     wx_path = os.path.join(SITE_DIR, "weather.html")
     if os.path.exists(wx_path):
@@ -1743,24 +1708,6 @@ def main():
             '<a class="btn-ghost" href="events.html">Събития →</a></article>'
             % (esc(when), esc(next_ev["name"]),
                (" · " + esc(venue)) if venue else "")
-        )
-    if podari_items:
-        nxt = podari_items[0]
-        pdt = datetime.strptime(nxt["date"], "%Y-%m-%d")
-        pwhen = ("%s, %s" % (weekday_bg(pdt).capitalize(), pdt.strftime("%d.%m")))
-        if nxt["places"] is None:
-            places_txt = "Онлайн"
-        elif nxt["places"] == 0:
-            places_txt = "Няма места"
-        elif nxt["places"] <= 3:
-            places_txt = "Оставащи места: %d — малко" % nxt["places"]
-        else:
-            places_txt = "Оставащи места: %d" % nxt["places"]
-        glance_cards.append(
-            '<article class="card"><span class="icon">❤️</span><h3>Подари Време</h3>'
-            '<p class="glance-big">%s</p><p class="meta">%s · %s</p>'
-            '<a class="btn-ghost" href="podari.html">Подари Време →</a></article>'
-            % (esc(nxt["place"]), esc(pwhen), esc(places_txt))
         )
     glance_html = ""
     if glance_cards:
@@ -1814,12 +1761,6 @@ def main():
             '<a class="btn-ghost" href="%s.html">Отвори →</a></article>'
             % (emoji, esc(title), esc(meta), sec_id)
         )
-    grid_cards.insert(
-        3,
-        '<article class="card"><span class="icon">❤️</span><h3>Подари Време</h3>'
-        '<p class="meta">Доброволчество с деца — посещения, обучения и информация.</p>'
-        '<a class="btn-ghost" href="podari.html">Отвори →</a></article>'
-    )
 
     home_body = (
         hero_html
@@ -1990,100 +1931,6 @@ def main():
         sizes[sec_id + ".html"] = write_page(
             sec_id + ".html", shell(sec_id, title, body))
 
-    # ================= ПОДАРИ ВРЕМЕ (v3: данните се рендват на момента на build-а) =================
-    podari_by_day = {}
-    for it in podari_items:
-        podari_by_day.setdefault(it["date"], []).append(it)
-    nearest_html = ""
-    if podari_items:
-        near_cards = []
-        for it in podari_items[:3]:
-            dt = datetime.strptime(it["date"], "%Y-%m-%d")
-            near_cards.append(
-                '<article class="card"><h3>%s</h3>'
-                '<p class="meta">%s, %s · %s</p><p>%s</p></article>'
-                % (esc(it["place"]), weekday_bg(dt).capitalize(), dt.strftime("%d.%m"),
-                   esc(it["cat"]), podari_places_badge(it["places"]))
-            )
-        nearest_html = (
-            '<section id="pv-nearest"><div class="container"><h2>Най-близки</h2>'
-            '<div class="grid">%s</div></div></section>' % "".join(near_cards)
-        )
-    podari_map_html = ""
-    pm_path = os.path.join(SITE_DIR, "podari-map.html")
-    if os.path.exists(pm_path):
-        podari_map_html = (
-            '<section id="pv-map"><div class="container">%s</div></section>'
-            % read_file("podari-map.html")
-        )
-    near_table_html = ""
-    if podari_json_ok:
-        near_table_html = podari_near_table(podari_json, today_iso, trips_url)
-    podari_days = []
-    for iso in sorted(podari_by_day):
-        dt = datetime.strptime(iso, "%Y-%m-%d")
-        cards = "".join(podari_card_html(it) for it in podari_by_day[iso])
-        podari_days.append(
-            '<section class="ev-day" id="pday-%s"><div class="container">'
-            '<h2>%s, %s %s</h2>%s</div></section>'
-            % (iso, weekday_bg(dt).capitalize(), dt.strftime("%d.%m"),
-               podari_day_badge(iso, now.date()), cards)
-        )
-    podari_site_html = podari_site_sections(podari_site)
-    if not podari_site_html:
-        podari_site_html = (
-            '<section><div class="container">'
-            '<article class="card"><h3>Как се записваш за посещение</h3>'
-            '<p class="meta">1) Влез в профила си на podarivreme.org. 2) Отвори „Посещения“ и избери '
-            'локация и дата. 3) Запиши се — местата са ограничени и се виждат в реално време. '
-            '4) За тръгване от София: паркингът пред БНБ, в часа за тръгване от графика; '
-            'местните групи се срещат направо пред дома. 5) Ако си нов и още не си минал '
-            'обучение — първо обучение (всеки четвъртък, 18:00, онлайн).</p>'
-            '<h3>Мисията</h3>'
-            '<p class="meta">„Всяко дете да има до себе си значим възрастен“ — ментор, приятел и пример, '
-            'който вярва в него и го подкрепя дългосрочно.</p>'
-            '<h3>Контакти</h3>'
-            '<p class="meta">бул. „Цариградско шосе“ 40, Европарк, София · hello@podarivreme.org · '
-            'Анастасия Цонева, +359 88 339 7755 · <a href="https://www.podarivreme.org" '
-            'target="_blank" rel="noopener">podarivreme.org</a></p>'
-            '<p class="podari-note">Данните за посещенията се обновяват всеки петък от сайта на фондацията '
-            'и писмата ѝ. Директна жива проверка от браузъра не е възможна — сайтът на '
-            'фондацията не позволява заявки от други страници (CORS).</p>'
-            '</article></div></section>'
-        )
-    podari_body = (
-        '<div class="container" id="top"><div class="page-hero">'
-        '<p class="kicker">Доброволчество</p><h1>Подари Време — предстоящи посещения</h1>'
-        '<p class="lede">%d предстоящи · данните се обновяват от сайта на фондацията. '
-        'Показват се само предстоящи дати — миналите изобщо не се виждат.</p></div></div>'
-        '<div class="container"><nav class="subnav" aria-label="Раздели на страницата">'
-        '<a class="c1" href="#podari-list" data-tip="Предстоящи посещения при деца в домове — избери дата и се запиши.">Посещения</a><a class="c2" href="#pv-nearest" data-tip="Трите най-близки по време посещения — най-бързият път да се включиш.">Най-близки</a><a class="c5" href="#pv-near-sofia" data-tip="Посещения, подредени по разстояние от София — най-близките първи, с час на тръгване и линк за записване.">Близо до София</a>'
-        '<a class="c3" href="#pv-map" data-tip="Карта на България с всички места и разстоянията от София.">Карта</a><a class="c4" href="#pv-mission" data-tip="Фондацията в числа — 16 години, 500 доброволци, 400 деца, 18 институции.">Мисията</a>'
-        '<a class="c5" href="#pv-join" data-tip="Пет стъпки до първото посещение и петте правила на доброволеца.">Как се става доброволец</a><a class="c1" href="#pv-academy" data-tip="Безплатни уроци за децата — Буквар, Диплома и Алма Матер, по 15 евро на час.">Академията</a>'
-        '<a class="c2" href="#pv-work" data-tip="Шестдневна програма за младежи от домове — как се търси работа и се живее самостоятелно.">Училище за работа</a><a class="c3" href="#pv-docs" data-tip="Наръчник, декларации и документи за доброволци — за сваляне.">Документи</a>'
-        '<a class="c4" href="#pv-stories" data-tip="Истории от блога на фондацията — какво се случва по посещенията.">Истории</a><a class="c5" href="#pv-media" data-tip="Репортажи и статии за Подари Време в медиите.">В медиите</a>'
-        '<a class="c1" href="#pv-podcast" data-tip="Подкаст „Подарени истории" и бюлетин „Доброволчески вести".">Подкаст</a><a class="c2" href="#pv-support" data-tip="Дари — 15 евро са 20 км път, 30 евро са урок за две деца, 50 евро са половината път до Враца за 15 доброволци.">Подкрепи</a>'
-        '<a class="c3" href="#pv-contacts" data-tip="Телефон, имейл и адрес на фондацията.">Контакти</a></nav></div>'
-        '%s%s%s'
-        '<div class="container"><div class="searchbar" role="search">'
-        '<input id="podari-q" type="search" placeholder="Търси място…" aria-label="Търси място">'
-        '<div class="chips" id="podariChips">'
-        '<button class="fchip on" data-cat="all">Всички</button>'
-        '<button class="fchip" data-cat="sofia">От София</button>'
-        '<button class="fchip" data-cat="local">Местни групи</button>'
-        '<button class="fchip" data-cat="training">Обучения</button>'
-        '</div>'
-        '<p class="count-line" id="podari-count" aria-live="polite"></p>'
-        '</div></div>'
-        '<div id="podari-list">%s</div>'
-        '%s'
-        % (len(podari_items), nearest_html, near_table_html, podari_map_html, "".join(podari_days),
-           podari_site_html)
-    )
-    sizes["podari.html"] = write_page(
-        "podari.html", shell("podari", "Подари Време", podari_body,
-                             extra_js='<script>' + PODARI_JS + '</script>\n'))
-
     # ================= ТЪРСЕНЕ =================
     search_entries = []
     for a in articles:
@@ -2105,11 +1952,6 @@ def main():
             "s": "%s %s" % (e.get("category", ""),
                             truncate_text(e.get("description_bg", ""), 200)),
         })
-    search_entries.append({
-        "t": "Подари Време — предстоящи посещения и обучения",
-        "d": "", "k": "Страница", "u": "podari.html",
-        "s": "Доброволчество с деца — посещения, обучения, контакти.",
-    })
     for sec_id, nav_label, title, intro, fname, emoji in single_defs:
         if fname not in singles:
             continue
@@ -2125,7 +1967,7 @@ def main():
         '<p class="kicker">Търсене</p><h1>Търси в новините и събитията</h1>'
         '<p class="lede">В новините и събитията — наведнъж.</p></div>'
         '<div class="searchbar" role="search">'
-        '<input id="q" type="search" placeholder="Напиши дума — например преход, джаз, Подари Време…" aria-label="Търси в новините и събитията">'
+        '<input id="q" type="search" placeholder="Напиши дума — например преход, джаз, концерт…" aria-label="Търси в новините и събитията">'
         '<p class="count-line" id="count" aria-live="polite"></p>'
         '</div><div id="results"><p class="no-results">Напиши дума — търси в новините и събитията.</p></div>'
         '</div>'
@@ -2143,7 +1985,6 @@ def main():
     counts = {
         "total": len(news) + len(upcoming) + len(singles),
         "news": len(articles), "digest": len(digests),
-        "podari": 1 if podari_json_ok else 0,
         "radar": 1 if "radar-actions.html" in singles else 0,
         "cars": 1 if "cars-dashboard.html" in singles else 0,
         "aiplan": 1 if "udemy-plan-2026-11-05-site.html" in singles else 0,
@@ -2152,9 +1993,9 @@ def main():
         "scout": len(scout_files),
         "other": len(other_events),
     }
-    print("INDEX: total=%d news=%d events=%d podari=%d radar=%d cars=%d aiplan=%d "
+    print("INDEX: total=%d news=%d events=%d radar=%d cars=%d aiplan=%d "
           "weather=%d scout=%d other=%d updated=%s"
-          % (counts["total"], counts["news"], counts["events"], counts["podari"],
+          % (counts["total"], counts["news"], counts["events"],
              counts["radar"], counts["cars"], counts["aiplan"],
              counts["weather"], counts["scout"],
              counts["other"], updated))

@@ -1480,7 +1480,7 @@ def build_feed(news_items):
     if not news_items:
         return ('<?xml version="1.0" encoding="UTF-8"?>\n'
                 '<rss version="2.0"><channel>'
-                '<title>Моите дайджести — Новини</title>'
+                '<title>Събития в София — Новини</title>'
                 '<link>%s</link>'
                 '<description>Новини сутрин, следобед и вечер — автоматичен обзор</description>'
                 '<language>bg</language></channel></rss>' % BASE_URL)
@@ -1500,7 +1500,7 @@ def build_feed(news_items):
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<rss version="2.0"><channel>'
-        '<title>Моите дайджести — Новини</title>'
+        '<title>Събития в София — Новини</title>'
         '<link>%s</link>'
         '<description>Новини сутрин, следобед и вечер — автоматичен обзор</description>'
         '<language>bg</language>%s</channel></rss>'
@@ -1585,7 +1585,7 @@ def main():
         page = (
             '<!DOCTYPE html>\n<html lang="bg">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            '<title>' + esc(title) + ' — Моите дайджести</title>\n'
+            '<title>' + esc(title) + ' — Събития в София</title>\n'
             '<meta name="description" content="Новини, събития и справки — обновява се автоматично.">\n'
             '<meta name="theme-color" content="#FBF9F3">\n'
             '<link rel="icon" href="favicon.ico" sizes="any">\n'
@@ -1593,13 +1593,13 @@ def main():
             '<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n'
             '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
             '<link rel="manifest" href="site.webmanifest">\n'
-            '<link rel="alternate" type="application/rss+xml" title="Моите дайджести — Новини" href="feed.xml">\n'
+            '<link rel="alternate" type="application/rss+xml" title="Събития в София — Новини" href="feed.xml">\n'
             '<style>' + CSS + '</style>\n</head>\n<body>\n'
             '<a class="skip-link" href="#main">Към съдържанието</a>\n'
             '<header class="site-header"><div class="container">'
             '<div class="header-row"><a class="brand" href="index.html">'
             '<img src="favicon.svg" alt="" width="32" height="32">'
-            '<span class="brand-name">Моите дайджести</span></a>'
+            '<span class="brand-name">Събития в София</span></a>'
             '<span class="brand-date">' + esc(today_str) + '</span></div>'
             '<nav class="nav" aria-label="Раздели"><div class="nav-inner">' + nav_html(active) + '</div></nav>'
             '</div></header>\n'

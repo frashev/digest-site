@@ -6,6 +6,8 @@
 <title>Търсене — Събития в София</title>
 <meta name="description" content="Новини, събития и справки — обновява се автоматично.">
 <meta name="theme-color" content="#FBF9F3">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; frame-src 'self'">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -253,7 +255,7 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 <a class="skip-link" href="#main">Към съдържанието</a>
 <header class="site-header"><div class="container"><div class="header-row"><a class="brand" href="index.html"><img src="favicon.svg" alt="" width="32" height="32"><span class="brand-name">Събития в София</span></a><span class="brand-date">четвъртък, 26 ноември 2026</span></div><nav class="nav" aria-label="Раздели"><div class="nav-inner"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="vreme.html">Времето</a><a href="assistants.html">AI асистенти</a><a href="search.html" aria-current="page">🔍 Търсене</a></div></nav></div></header>
 <main id="main"><div class="container" id="top"><div class="page-hero"><p class="kicker">Търсене</p><h1>Търси в новините и събитията</h1><p class="lede">В новините и събитията — наведнъж.</p></div><div class="searchbar" role="search"><input id="q" type="search" placeholder="Напиши дума — например преход, джаз, концерт…" aria-label="Търси в новините и събитията"><p class="count-line" id="count" aria-live="polite"></p></div><div id="results"><p class="no-results">Напиши дума — търси в новините и събитията.</p></div></div></main>
-<footer><div class="container"><div class="foot-nav"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="vreme.html">Времето</a><a href="assistants.html">AI асистенти</a><a href="search.html" aria-current="page">🔍 Търсене</a></div><p>Последно обновяване: 26.11.2026 08:28 · Обновява се автоматично на всеки час.</p><p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p></div></footer>
+<footer><div class="container"><div class="foot-nav"><a href="index.html">Начало</a><a href="news.html">Новини</a><a href="events.html">Събития</a><a href="vreme.html">Времето</a><a href="assistants.html">AI асистенти</a><a href="search.html" aria-current="page">🔍 Търсене</a></div><p>Последно обновяване: 26.11.2026 07:06 · Обновява се автоматично на всеки час.</p><p><a href="feed.xml">RSS емисия — новините</a> · <a href="#top">Нагоре ↑</a></p></div></footer>
 <button id="fabNav" class="fab-nav" type="button" aria-label="Раздели на страницата" title="Раздели на страницата">↑</button>
 <nav id="fabMenu" class="fab-menu" aria-label="Раздели на страницата"></nav>
 <div id="tip" class="tip" role="tooltip"></div>
@@ -619,8 +621,24 @@ window.addEventListener('resize', fitIframes);
   if (!btn || !menu) return;
   var heads = document.querySelectorAll('main h2');
   if (heads.length < 2) { btn.style.display = 'none'; return; }
-  var html = '<div class="fab-title">Раздели на тази страница</div>'
-    + '<a href="#top" data-tip="Връща те най-горе на страницата.">⬆ Начало на страницата</a>';
+  function safeFragId(id){
+    if (typeof id !== 'string' || !id || !/^[\w.-]+$/.test(id)) return null;
+    return id;
+  }
+  function appendFabLink(parent, href, text, cls, tip){
+    var a = document.createElement('a');
+    if (cls) a.className = cls;
+    a.href = href;
+    a.textContent = text;
+    if (tip) a.setAttribute('data-tip', tip);
+    parent.appendChild(a);
+  }
+  menu.replaceChildren();
+  var fabTitle = document.createElement('div');
+  fabTitle.className = 'fab-title';
+  fabTitle.textContent = 'Раздели на тази страница';
+  menu.appendChild(fabTitle);
+  appendFabLink(menu, '#top', '⬆ Начало на страницата', '', 'Връща те най-горе на страницата.');
   var SEC_COLORS = {'podari-list':'c1','pv-nearest':'c2','pv-near-sofia':'c5','pv-map':'c3','pv-mission':'c4','pv-join':'c5',
     'pv-academy':'c1','pv-work':'c2','pv-docs':'c3','pv-stories':'c4','pv-media':'c5',
     'pv-podcast':'c1','pv-support':'c2','pv-contacts':'c3'};
@@ -644,17 +662,15 @@ window.addEventListener('resize', fitIframes);
     if (!h.id) h.id = 'sec-' + (i + 1);
     var t = (h.textContent || '').replace(/\s+/g, ' ').trim();
     if (!t) return;
-    // БЪГ (23.11): h2 нямат собствен id — id-то е на <section>-а около тях.
-    // Затова цветът и tooltip-ът се търсят по id-то на секцията, не на заглавието.
     var sec = h.closest ? h.closest('section') : null;
     var sid = sec ? sec.id : '';
-    var target = sid || h.id;
+    var target = safeFragId(sid) || safeFragId(h.id);
+    if (!target) return;
     var isDay = sid.indexOf('day-') === 0 || sid.indexOf('pday-') === 0;
     var cls = SEC_COLORS[sid] || (isDay ? 'c3' : 'c' + ((i % 5) + 1));
     var tip = TIPS[sid] || TIPS_BY_TEXT[t] || (isDay ? (document.getElementById('podari-list') ? 'Всички посещения на тази дата — натисни, за да отидеш на деня.' : 'Всичко за този ден — натисни, за да отидеш на деня.') : '');
-    html += '<a class="' + cls + '" href="#' + target + '"' + (tip ? ' data-tip="' + tip + '"' : '') + '>' + t + '</a>';
+    appendFabLink(menu, '#' + target, t, cls, tip || null);
   });
-  menu.innerHTML = html;
   btn.addEventListener('click', function(e){
     e.stopPropagation();
     menu.classList.toggle('open');
@@ -719,11 +735,53 @@ window.addEventListener('resize', fitIframes);
   var results = document.getElementById('results');
   var countEl = document.getElementById('count');
   var data = null;
+  function showStatus(msg){
+    results.replaceChildren();
+    var p = document.createElement('p');
+    p.className = 'no-results';
+    p.textContent = msg;
+    results.appendChild(p);
+  }
+  function safeResultHref(u){
+    if (typeof u !== 'string') return null;
+    u = u.trim();
+    if (!u || /[\s<>"'`]/.test(u)) return null;
+    var lower = u.toLowerCase();
+    if (lower.indexOf('javascript:') === 0 || lower.indexOf('data:') === 0 ||
+        lower.indexOf('vbscript:') === 0 || lower.indexOf('file:') === 0) return null;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return null;
+    if (!/^([\w%./-]+\.html(?:#[\w%./-]+)?|#[\w%./-]+)$/.test(u)) return null;
+    return u;
+  }
+  function appendResultCard(entry){
+    var card = document.createElement('article');
+    card.className = 'result-card';
+    var h3 = document.createElement('h3');
+    var a = document.createElement('a');
+    var href = safeResultHref(entry.u);
+    if (href) a.href = href;
+    else { a.href = '#'; a.setAttribute('aria-disabled', 'true'); }
+    a.textContent = entry.t || '';
+    h3.appendChild(a);
+    card.appendChild(h3);
+    var meta = document.createElement('p');
+    meta.className = 'meta';
+    var metaText = entry.k || '';
+    if (entry.d) metaText += (metaText ? ' · ' : '') + entry.d;
+    meta.textContent = metaText;
+    card.appendChild(meta);
+    if (entry.s) {
+      var body = document.createElement('p');
+      body.textContent = entry.s;
+      card.appendChild(body);
+    }
+    return card;
+  }
   function render(needle){
     needle = (needle || '').trim().toLowerCase();
-    if (!data) { results.innerHTML = '<p class="no-results">Зареждам индекса…</p>'; return; }
+    if (!data) { showStatus('Зареждам индекса…'); return; }
     if (!needle) {
-      results.innerHTML = '<p class="no-results">Напиши дума — търси в изданията и събитията.</p>';
+      showStatus('Напиши дума — търси в изданията и събитията.');
       countEl.textContent = '';
       return;
     }
@@ -732,19 +790,16 @@ window.addEventListener('resize', fitIframes);
     }).slice(0, 40);
     countEl.textContent = 'Намерени: ' + hits.length;
     if (!hits.length) {
-      results.innerHTML = '<p class="no-results">Няма съвпадения — опитай с по-кратка дума.</p>';
+      showStatus('Няма съвпадения — опитай с по-кратка дума.');
       return;
     }
-    results.innerHTML = hits.map(function(e){
-      return '<article class="result-card"><h3><a href="' + e.u + '">' + e.t + '</a></h3>'
-        + '<p class="meta">' + e.k + (e.d ? ' · ' + e.d : '') + '</p>'
-        + (e.s ? '<p>' + e.s + '</p>' : '') + '</article>';
-    }).join('');
+    results.replaceChildren();
+    hits.forEach(function(e){ results.appendChild(appendResultCard(e)); });
   }
   fetch('search.json').then(function(r){ return r.json(); }).then(function(j){
     data = j; render(q.value);
   }).catch(function(){
-    results.innerHTML = '<p class="no-results">Индексът не се зареди — опитай отново след малко.</p>';
+    showStatus('Индексът не се зареди — опитай отново след малко.');
   });
   q.addEventListener('input', function(){ render(q.value); });
   var params = new URLSearchParams(location.search);

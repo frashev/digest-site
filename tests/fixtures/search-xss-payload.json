@@ -1,0 +1,16 @@
+[
+  {
+    "t": "<img src=x onerror=alert(1)> evil",
+    "d": "fixture",
+    "k": "Тест",
+    "u": "javascript:alert(1)",
+    "s": "<script>alert('xss')</script> описание"
+  },
+  {
+    "t": "Нормален<Sofia>заглавие",
+    "d": "",
+    "k": "Тест",
+    "u": "news.html#day-16-11",
+    "s": "Безопасен текст"
+  }
+]

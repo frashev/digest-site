@@ -1792,7 +1792,7 @@ def main():
     grid_cards = []
     grid_cards.append(
         '<article class="card"><span class="icon">📰</span><h3>Новини</h3>'
-        '<p class="meta">%d новини от последните 3 дни</p>'
+        '<p class="meta">%d новини от последните 10 дни</p>'
         '<a class="btn-ghost" href="news.html">Отвори →</a></article>' % len(articles)
     )
     grid_cards.append(
@@ -1881,7 +1881,7 @@ def main():
         news_body = (
             '<div class="container" id="top"><div class="page-hero">'
             '<p class="kicker">Новини</p><h1>Новини — сутрин, следобед и вечер</h1>'
-            '<p class="lede">%d новини от последните 3 дни · чети направо тук, '
+            '<p class="lede">%d новини от последните 10 дни · чети направо тук, '
             'без да отваряш отделни файлове.</p></div></div>'
             '<div class="toolbar" id="newsFilters" role="search">'
             '<button class="btn filter-toggle" id="newsFilterToggle">☰ Филтри</button>'

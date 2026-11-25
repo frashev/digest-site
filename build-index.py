@@ -4,7 +4,7 @@
 # лепкаво меню с къси етикети (активната страница е маркирана, менюто се
 # скролва до нея). Всяка страница е отделна:
 # index (начало), news (новини), events (събития), vreme, podari,
-# radar, cars, aiplan, scout (ако има), search (глобално търсене).
+# scout (ако има), search (глобално търсене).
 # ДАННИТЕ СЕ ЧЕТАТ НА СТРАНИЦАТА, БЕЗ ОТВАРЯНЕ НА HTML ФАЙЛОВЕ:
 # - новини: статиите от най-новото издание се парсват и се показват директно
 #   (по дни и издания, с търсене и филтър по категория); старите издания не се показват.
@@ -16,7 +16,7 @@
 # Малките файлове без скриптове се вграждат директно. Глобалното търсене
 # чете search.json. Без външни зависимости. Пуска се от publish.ps1 на PC-то.
 # Изход: index.html, news.html, events.html, vreme.html,
-# podari.html, radar.html, cars.html, aiplan.html, scout.html,
+# podari.html, scout.html,
 # search.html, search.json, feed.xml.
 import html as htmlmod
 import json
@@ -1520,15 +1520,12 @@ def main():
         texts[item["name"]] = read_file(item["name"])
 
     # Единични файлове (фиксиран ред) + еднократни файлове със събития
+    # RADAR, Коли и AI план са СКРИТИ от публичния сайт (25.11.2026, по искане
+    # на Philippe — лична информация); източниците им остават локално и
+    # не се качват в репото.
     single_defs = [
         ("vreme", "Времето", "Времето в София", "Прогноза за следващите дни.",
          "weather.html", "🌤️"),
-        ("radar", "RADAR", "RADAR действия", "Какво следва от последните AI RADAR издания.",
-         "radar-actions.html", "📡"),
-        ("cars", "Коли", "Коли", "Обяви за коли, които следя.",
-         "cars-dashboard.html", "🚗"),
-        ("aiplan", "AI план", "AI план", "Какво уча и какво следва.",
-         "udemy-plan-2026-11-05-site.html", "🤖"),
     ]
     scout_files = sorted(n for n in singles if n.startswith("scout-") and n.endswith(".html"))
     if scout_files:

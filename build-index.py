@@ -44,7 +44,7 @@ PART_EMOJI = {"morning": "🌅", "afternoon": "🌆", "evening": "🌙", "review
 # за единични файлове).
 GENERATED = ("index.html", "news.html", "events.html", "vreme.html",
              "podari.html", "radar.html", "cars.html", "aiplan.html",
-             "scout.html", "search.html")
+             "scout.html", "search.html", "assistants.html")
 
 MIN_SIZE = 1024
 

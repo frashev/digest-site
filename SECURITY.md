@@ -24,6 +24,10 @@ Checklist for operators and reviewers. Scope: static GitHub Pages site generated
 - [x] **Meta CSP** and `referrer` are injected in the HTML shell in `build-index.py` (`default-src 'self'`, inline script/style allowed for this static inline bundle).
 - **HTTP response headers** (e.g. `Content-Security-Policy`, `X-Frame-Options`, HSTS) are **not** configurable on standard GitHub Pages for this repo. Use meta tags for policy hints; for strict headers, put a reverse proxy or Cloudflare in front of the Pages URL.
 
+### Platform limits (expected)
+
+GitHub Pages does not emit `Content-Security-Policy`, `Strict-Transport-Security`, or `X-Frame-Options` as HTTP response headers for this static site—only policies embedded in the HTML (e.g. meta CSP from `build-index.py`) apply. That meta CSP includes `'unsafe-inline'` for the bundled inline script and styles, so it is a secondary, softer layer; primary XSS control remains DOM rendering with `textContent` and validated hrefs (see **XSS mitigation** above). These constraints are normal for static Pages hosting and are not a gap in the DOM-based search/FAB hardening from PR #1.
+
 ## What the 2026-11-25 audit did **not** cover
 
 - Upstream Muse content generation and SSH sync (`site-sync.py`).

@@ -1220,8 +1220,24 @@ window.addEventListener('resize', fitIframes);
   if (!btn || !menu) return;
   var heads = document.querySelectorAll('main h2');
   if (heads.length < 2) { btn.style.display = 'none'; return; }
-  var html = '<div class="fab-title">Раздели на тази страница</div>'
-    + '<a href="#top" data-tip="Връща те най-горе на страницата.">⬆ Начало на страницата</a>';
+  function safeFragId(id){
+    if (typeof id !== 'string' || !id || !/^[\\w.-]+$/.test(id)) return null;
+    return id;
+  }
+  function appendFabLink(parent, href, text, cls, tip){
+    var a = document.createElement('a');
+    if (cls) a.className = cls;
+    a.href = href;
+    a.textContent = text;
+    if (tip) a.setAttribute('data-tip', tip);
+    parent.appendChild(a);
+  }
+  menu.replaceChildren();
+  var fabTitle = document.createElement('div');
+  fabTitle.className = 'fab-title';
+  fabTitle.textContent = 'Раздели на тази страница';
+  menu.appendChild(fabTitle);
+  appendFabLink(menu, '#top', '⬆ Начало на страницата', '', 'Връща те най-горе на страницата.');
   var SEC_COLORS = {'podari-list':'c1','pv-nearest':'c2','pv-near-sofia':'c5','pv-map':'c3','pv-mission':'c4','pv-join':'c5',
     'pv-academy':'c1','pv-work':'c2','pv-docs':'c3','pv-stories':'c4','pv-media':'c5',
     'pv-podcast':'c1','pv-support':'c2','pv-contacts':'c3'};
@@ -1245,17 +1261,15 @@ window.addEventListener('resize', fitIframes);
     if (!h.id) h.id = 'sec-' + (i + 1);
     var t = (h.textContent || '').replace(/\\s+/g, ' ').trim();
     if (!t) return;
-    // БЪГ (23.11): h2 нямат собствен id — id-то е на <section>-а около тях.
-    // Затова цветът и tooltip-ът се търсят по id-то на секцията, не на заглавието.
     var sec = h.closest ? h.closest('section') : null;
     var sid = sec ? sec.id : '';
-    var target = sid || h.id;
+    var target = safeFragId(sid) || safeFragId(h.id);
+    if (!target) return;
     var isDay = sid.indexOf('day-') === 0 || sid.indexOf('pday-') === 0;
     var cls = SEC_COLORS[sid] || (isDay ? 'c3' : 'c' + ((i % 5) + 1));
     var tip = TIPS[sid] || TIPS_BY_TEXT[t] || (isDay ? (document.getElementById('podari-list') ? 'Всички посещения на тази дата — натисни, за да отидеш на деня.' : 'Всичко за този ден — натисни, за да отидеш на деня.') : '');
-    html += '<a class="' + cls + '" href="#' + target + '"' + (tip ? ' data-tip="' + tip + '"' : '') + '>' + t + '</a>';
+    appendFabLink(menu, '#' + target, t, cls, tip || null);
   });
-  menu.innerHTML = html;
   btn.addEventListener('click', function(e){
     e.stopPropagation();
     menu.classList.toggle('open');
@@ -1321,11 +1335,53 @@ SEARCH_JS = """
   var results = document.getElementById('results');
   var countEl = document.getElementById('count');
   var data = null;
+  function showStatus(msg){
+    results.replaceChildren();
+    var p = document.createElement('p');
+    p.className = 'no-results';
+    p.textContent = msg;
+    results.appendChild(p);
+  }
+  function safeResultHref(u){
+    if (typeof u !== 'string') return null;
+    u = u.trim();
+    if (!u || /[\\s<>"'`]/.test(u)) return null;
+    var lower = u.toLowerCase();
+    if (lower.indexOf('javascript:') === 0 || lower.indexOf('data:') === 0 ||
+        lower.indexOf('vbscript:') === 0 || lower.indexOf('file:') === 0) return null;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return null;
+    if (!/^([\\w%./-]+\\.html(?:#[\\w%./-]+)?|#[\\w%./-]+)$/.test(u)) return null;
+    return u;
+  }
+  function appendResultCard(entry){
+    var card = document.createElement('article');
+    card.className = 'result-card';
+    var h3 = document.createElement('h3');
+    var a = document.createElement('a');
+    var href = safeResultHref(entry.u);
+    if (href) a.href = href;
+    else { a.href = '#'; a.setAttribute('aria-disabled', 'true'); }
+    a.textContent = entry.t || '';
+    h3.appendChild(a);
+    card.appendChild(h3);
+    var meta = document.createElement('p');
+    meta.className = 'meta';
+    var metaText = entry.k || '';
+    if (entry.d) metaText += (metaText ? ' · ' : '') + entry.d;
+    meta.textContent = metaText;
+    card.appendChild(meta);
+    if (entry.s) {
+      var body = document.createElement('p');
+      body.textContent = entry.s;
+      card.appendChild(body);
+    }
+    return card;
+  }
   function render(needle){
     needle = (needle || '').trim().toLowerCase();
-    if (!data) { results.innerHTML = '<p class="no-results">Зареждам индекса…</p>'; return; }
+    if (!data) { showStatus('Зареждам индекса…'); return; }
     if (!needle) {
-      results.innerHTML = '<p class="no-results">Напиши дума — търси в изданията и събитията.</p>';
+      showStatus('Напиши дума — търси в изданията и събитията.');
       countEl.textContent = '';
       return;
     }
@@ -1334,19 +1390,16 @@ SEARCH_JS = """
     }).slice(0, 40);
     countEl.textContent = 'Намерени: ' + hits.length;
     if (!hits.length) {
-      results.innerHTML = '<p class="no-results">Няма съвпадения — опитай с по-кратка дума.</p>';
+      showStatus('Няма съвпадения — опитай с по-кратка дума.');
       return;
     }
-    results.innerHTML = hits.map(function(e){
-      return '<article class="result-card"><h3><a href="' + e.u + '">' + e.t + '</a></h3>'
-        + '<p class="meta">' + e.k + (e.d ? ' · ' + e.d : '') + '</p>'
-        + (e.s ? '<p>' + e.s + '</p>' : '') + '</article>';
-    }).join('');
+    results.replaceChildren();
+    hits.forEach(function(e){ results.appendChild(appendResultCard(e)); });
   }
   fetch('search.json').then(function(r){ return r.json(); }).then(function(j){
     data = j; render(q.value);
   }).catch(function(){
-    results.innerHTML = '<p class="no-results">Индексът не се зареди — опитай отново след малко.</p>';
+    showStatus('Индексът не се зареди — опитай отново след малко.');
   });
   q.addEventListener('input', function(){ render(q.value); });
   var params = new URLSearchParams(location.search);
@@ -1588,6 +1641,12 @@ def main():
             '<title>' + esc(title) + ' — Събития в София</title>\n'
             '<meta name="description" content="Новини, събития и справки — обновява се автоматично.">\n'
             '<meta name="theme-color" content="#FBF9F3">\n'
+            '<meta name="referrer" content="strict-origin-when-cross-origin">\n'
+            '<meta http-equiv="Content-Security-Policy" content="'
+            "default-src 'self'; base-uri 'self'; form-action 'self'; "
+            "object-src 'none'; script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+            "connect-src 'self'; font-src 'self'; frame-src 'self'\">\n"
             '<link rel="icon" href="favicon.ico" sizes="any">\n'
             '<link rel="icon" href="favicon.svg" type="image/svg+xml">\n'
             '<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">\n'
@@ -1913,6 +1972,15 @@ def main():
             '%s'
             % (len(upcoming), free_count, new_count, ev_day_chips, ev_cat_chips,
                ev_src_chips, "".join(ev_sections))
+        )
+        sizes["events.html"] = write_page(
+            "events.html", shell("events", "Събития", events_body))
+    else:
+        events_body = (
+            '<div class="container" id="top"><div class="page-hero">'
+            '<p class="kicker">Събития</p><h1>Събития — от днес нататък</h1>'
+            '<p class="lede">Няма предстоящи събития в регистъра — '
+            'страницата се обновява при следващ sync.</p></div></div>'
         )
         sizes["events.html"] = write_page(
             "events.html", shell("events", "Събития", events_body))

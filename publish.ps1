@@ -6,8 +6,20 @@ function Log($msg) { Write-Output ("[{0}] {1}" -f (Get-Date -Format 'yyyy-MM-dd 
 python build-index.py
 if ($LASTEXITCODE -ne 0) { Log "BUILD-INDEX FAILED"; exit 1 }
 
-# 2. commit само при промени
-git add -A
+# 2. commit само publish артефакти (allowlist — не git add -A)
+function Add-PublishArtifact($path) {
+    if (Test-Path -LiteralPath $path) { git add -- $path }
+}
+$publishFiles = @(
+    'index.html', 'news.html', 'events.html', 'vreme.html', 'search.html', 'search.json', 'feed.xml',
+    'assistants.html', 'scout.html', 'podari.html', 'radar.html', 'cars.html', 'aiplan.html', 'week.html',
+    'favicon.ico', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png',
+    'site.webmanifest', 'weather.html', 'assistants-content.html'
+)
+foreach ($f in $publishFiles) { Add-PublishArtifact $f }
+foreach ($pattern in @('novini-*.html', 'digest-*.html', 'digest-week-*.html', 'digest-tonight-*.html', 'events-*.html')) {
+    Get-ChildItem -File -Filter $pattern -ErrorAction SilentlyContinue | ForEach-Object { Add-PublishArtifact $_.Name }
+}
 git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
     git commit -m ("site sync " + (Get-Date -Format 'yyyy-MM-dd HH:mm')) | Out-Null

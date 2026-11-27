@@ -606,27 +606,56 @@ def plain_text(html_text, limit=600):
     return t[:limit]
 
 
+_ATTR_VAL = r"""("[^"]*"|'[^']*'|[^\s>]+)"""
+_TAG = re.compile(r"""<[a-zA-Z][^\s/>]*(?:"[^"]*"|'[^']*'|[^'">])*>""")
+
+
 def _safe_attr(m):
-    """href/src само към http(s), mailto, # или относителен път; иначе -> "#"."""
-    raw = m.group(2).strip("\"'")
+    """href/src само към http(s), mailto, tel, # или относителен път (src и data:image/); иначе -> "#"."""
+    name, raw = m.group(1), m.group(2).strip("\"'")
     plain = re.sub(r"[\x00-\x20]", "", htmlmod.unescape(raw)).lower()
     scheme = re.match(r"^([a-z][a-z0-9+.-]*):", plain)
-    if scheme and scheme.group(1) not in ("http", "https", "mailto"):
-        return '%s="#"' % m.group(1)
-    return m.group(0)
+    if not scheme or scheme.group(1) in ("http", "https", "mailto", "tel"):
+        return m.group(0)
+    if name.lower() == "src" and plain.startswith("data:image/") and not plain.startswith("data:image/svg"):
+        return m.group(0)
+    return '%s="#"' % name
+
+
+_ATTR = re.compile(r"""([^\s"'>/=]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?""")
+_URL_ATTRS = ("href", "src", "action", "formaction", "xlink:href")
+
+
+def _clean_tag(m):
+    """Сглобява тага наново атрибут по атрибут: без on*= и srcdoc, адресите минават през _safe_attr."""
+    tag = m.group(0)
+    nm = re.match(r"<([a-zA-Z][^\s/>]*)", tag)
+    rest = tag[nm.end():].rstrip(">").rstrip()
+    closing = "/" if rest.endswith("/") else ""
+    out = []
+    for am in _ATTR.finditer(rest):
+        key = am.group(1).lower()
+        if key.startswith("on") or key == "srcdoc":
+            continue
+        if am.group(2) is None:
+            out.append(am.group(1))
+            continue
+        piece = "%s=%s" % (am.group(1), am.group(2))
+        if key in _URL_ATTRS:
+            piece = re.sub(r"^([^=]+)=(.*)$", _safe_attr, piece, flags=re.S)
+        out.append(piece)
+    return "<%s%s%s>" % (nm.group(1), "".join(" " + x for x in out), closing)
 
 
 def inline_body(name):
-    """Връща тялото на малък файл без скриптове, без първия <h1> и без <style>."""
+    """Връща тялото на малък файл без скриптове, стилове, вградени рамки, без първия <h1>, без on*= и опасни адреси."""
     text = read_file(name)
     m = re.search(r"<body>(.*?)</body>", text, re.S)
     body = m.group(1) if m else text
     body = re.sub(r"<h1[^>]*>.*?</h1>", "", body, count=1, flags=re.S)
-    body = re.sub(r"<script\b.*?</script\s*>", "", body, flags=re.S | re.I)
-    # inline handlers (onclick=, onerror=...) и javascript: адреси не влизат в страницата
-    body = re.sub(r"""[\s/]on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)""", " ", body, flags=re.I)
-    body = re.sub(r"""\b(href|src|action|formaction|xlink:href)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)""",
-                  _safe_attr, body, flags=re.I)
+    body = re.sub(r"<(script|style|iframe|object|embed|template|noscript)\b.*?</\1\s*>", "", body, flags=re.S | re.I)
+    body = re.sub(r"<(script|style|iframe|object|embed|meta|base|link)\b[^>]*>", "", body, flags=re.I)
+    body = _TAG.sub(_clean_tag, body)
     return body.strip()
 
 
@@ -669,7 +698,7 @@ CSS = """
   --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html:focus-within{scroll-behavior:smooth}
 body{margin:0;font-family:var(--font-sans);font-size:17px;line-height:1.6;background:var(--bg);color:var(--ink)}
 h1,h2{font-family:var(--font-serif);color:var(--ink-soft)}
 a{color:var(--accent);font-weight:600}
@@ -824,7 +853,7 @@ footer .foot-nav{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 12px}
 .tb-badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:var(--r-pill);background:var(--accent);color:#fff;font-size:12px;font-weight:700}
 .tb-badge[hidden],.tb-clear[hidden]{display:none}
 .tb-clear{color:var(--accent-dark)!important;font-weight:600}
-.tb-panel{display:none;max-height:min(62vh,560px);overflow:auto;overscroll-behavior:contain;padding:2px 2px 4px;margin-top:6px;border-top:1px solid var(--border)}
+.tb-panel{display:none;max-height:min(62vh,560px,calc(100dvh - var(--stick,200px) - 16px));overflow:auto;overscroll-behavior:contain;padding:2px 2px 4px;margin-top:6px;border-top:1px solid var(--border)}
 .toolbar.open .tb-panel{display:block}
 .toolbar .label{font-size:12px;font-weight:700;color:var(--muted);margin:12px 4px 2px;display:block;text-transform:uppercase;letter-spacing:.05em}
 .toolbar .chips{margin:4px 0}
@@ -1380,6 +1409,7 @@ function setupToolbar(tb, tgl, resetFn, countFn){
     resetFn();
     var q = tb.querySelector('input[type="search"]');
     if (q) q.dispatchEvent(new Event('input'));
+    if (q) q.focus(); else if (tgl) tgl.focus();
   });
   tb._count = countFn;
   function stick(){
@@ -1393,13 +1423,6 @@ function setupToolbar(tb, tgl, resetFn, countFn){
   stick();
   window.addEventListener('resize', stick);
   syncToolbar(tb);
-  // дълбок линк (#day-…, #ev-…): кацане отново, след като оформлението се е подредило
-  if (location.hash) setTimeout(function(){
-    var t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-    if (!t) return;
-    var y = t.getBoundingClientRect().top + window.scrollY - ((parseFloat(tb.style.top) || 0) + tb.offsetHeight + 12);
-    window.scrollTo({top: Math.max(0, y), behavior: 'instant'});
-  }, 80);
 }
 function syncToolbar(tb){
   tb.querySelectorAll('.tb-panel .fchip, .tb-panel .btn').forEach(function(b){

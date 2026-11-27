@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Regression checks: only safe links, colours and inline HTML reach the generated pages."""
 import importlib.util
+from html.parser import HTMLParser
 import pathlib
 import tempfile
 import unittest
@@ -9,6 +10,24 @@ ROOT = pathlib.Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("build_index", ROOT / "build-index.py")
 bi = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bi)
+
+
+class _Attrs(HTMLParser):
+    """Независима проверка: парсва като браузър и събира тагове и атрибути."""
+    def __init__(self):
+        super().__init__()
+        self.tags, self.attrs = [], []
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.append(tag)
+        self.attrs.extend((k.lower(), (v or "")) for k, v in attrs)
+
+
+def parse(html_text):
+    a = _Attrs()
+    a.feed(html_text)
+    a.close()
+    return a
 
 
 class TestSafeUrl(unittest.TestCase):
@@ -42,10 +61,7 @@ class TestRenderedCards(unittest.TestCase):
 
     def test_event_card_drops_js_link(self):
         e = {"title": "E", "link": "javascript:alert(1)", "date": "2026-11-29"}
-        try:
-            out = bi.event_card_html(e)
-        except (KeyError, TypeError):
-            self.skipTest("event_card_html needs more fields")
+        out = bi.event_card_html(e)
         self.assertNotIn("javascript:", out)
 
 
@@ -65,19 +81,40 @@ class TestInlineBody(unittest.TestCase):
         payloads = [
             '<SCRIPT>alert(1)</SCRIPT >',
             '<img src=x onerror="alert(1)">',
+            '<img src="x"onerror="alert(1)">',
+            "<img src='x'onerror=alert(1)>",
+            '<img alt=">" onerror="alert(1)">',
             "<svg/onload=alert(1)>",
             '<a href="javascript:alert(1)">a</a>',
+            "<a href=JAVASCRIPT:alert(1)>a</a>",
             "<a href='JAVASCRIPT:alert(1)'>a</a>",
             '<a href="java&#x09;script:alert(1)">a</a>',
             '<a href=" &#106;avascript:alert(1)">a</a>',
             '<iframe src="data:text/html,x"></iframe>',
+            '<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe>',
+            '<div srcdoc="x">d</div>',
+            '<style>body{background:url(javascript:x)}</style>',
+            '<base href="https://evil.example/"><meta http-equiv="refresh" content="0;url=x">',
+            '<img src="data:image/svg+xml,<svg onload=alert(1)>">',
         ]
+        bad_tags = {"script", "style", "iframe", "object", "embed", "base", "meta", "link"}
         for p in payloads:
-            out = self._inline(p).lower()
-            self.assertNotIn("<script", out, p)
-            self.assertNotRegex(out, r"[\s/]on[a-z]+\s*=", p)
-            self.assertNotIn("script:", out, p)
-            self.assertNotIn("data:", out, p)
+            out = self._inline(p)
+            got = parse(out)
+            self.assertFalse(bad_tags & set(got.tags), (p, out))
+            for k, v in got.attrs:
+                self.assertFalse(k.startswith("on") or k == "srcdoc", (p, out))
+                if k in ("href", "src"):
+                    plain = "".join(ch for ch in v if ord(ch) > 32).lower()
+                    self.assertFalse(plain.startswith(("javascript:", "vbscript:", "data:text", "data:image/svg")), (p, out))
+
+    def test_keeps_safe_schemes(self):
+        out = self._inline('<a href="tel:+359888">t</a> <a href="mailto:a@b.c">m</a> '
+                           '<img src="data:image/png;base64,iVBORw0KGgo=" alt="online now">')
+        self.assertIn('href="tel:+359888"', out)
+        self.assertIn('href="mailto:a@b.c"', out)
+        self.assertIn('src="data:image/png;base64,iVBORw0KGgo="', out)
+        self.assertIn('alt="online now"', out)
 
     def test_keeps_normal_links(self):
         out = self._inline('<a href="https://example.com">x</a> <a href="novini.html#a">y</a>')

@@ -19,6 +19,7 @@
 # scout.html,
 # search.html, search.json, feed.xml.
 import html as htmlmod
+from html.parser import HTMLParser
 import json
 import os
 import re
@@ -606,71 +607,94 @@ def plain_text(html_text, limit=600):
     return t[:limit]
 
 
-_ATTR_VAL = r"""("[^"]*"|'[^']*'|[^\s>]+)"""
-# таг с балансирани кавички; ако кавичка е без двойка, резервният клон хваща до първия ">"
-_TAG = re.compile(r"""<[a-zA-Z][a-zA-Z0-9:-]*(?:"[^"]*"|'[^']*'|[^'"<>])*>|<[a-zA-Z][a-zA-Z0-9:-]*[^<>]*>""")
 _DROP_TAGS = {"script", "style", "iframe", "frame", "frameset", "object", "embed", "applet", "meta", "base",
               "link", "template", "noscript", "animate", "set", "animatemotion", "animatetransform", "handler"}
+# тези носят съдържание, което също пада (до затварящия таг)
+_DROP_CONTENT = {"script", "style", "iframe", "frameset", "object", "embed", "applet", "template", "noscript"}
+_URL_ATTRS = {"href", "src", "action", "formaction", "xlink:href", "poster", "background"}
+_VOID = {"area", "br", "col", "hr", "img", "input", "source", "track", "wbr", "param"}
 
 
-def _safe_attr(m):
-    """href/src само към http(s), mailto, tel, # или относителен път (src и data:image/); иначе -> "#"."""
-    name, raw = m.group(1), m.group(2).strip("\"'")
-    plain = re.sub(r"[\x00-\x20]", "", htmlmod.unescape(raw)).lower()
+def safe_attr_url(name, value):
+    """Адрес само към http(s), mailto, tel, # или относителен път (src: и data:image/ без svg); иначе '#'."""
+    plain = re.sub(r"[\x00-\x20]", "", value or "").lower()
     scheme = re.match(r"^([a-z][a-z0-9+.-]*):", plain)
     if not scheme or scheme.group(1) in ("http", "https", "mailto", "tel"):
-        return m.group(0)
-    if name.lower() == "src" and plain.startswith("data:image/") and not plain.startswith("data:image/svg"):
-        return m.group(0)
-    return '%s="#"' % name
+        return value
+    if name == "src" and plain.startswith("data:image/") and not plain.startswith("data:image/svg"):
+        return value
+    return "#"
 
 
-_ATTR = re.compile(r"""([^\s"'>/=]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?""")
-_URL_ATTRS = ("href", "src", "action", "formaction", "xlink:href")
+class _Sanitizer(HTMLParser):
+    """Парсва фрагмента и го сглобява наново от токени: всеки таг и текст се пишат екранирани,
+    затова браузърът вижда точно това, което е проверено (без разминаване в парсването)."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.out, self.skip = [], []
+
+    def _tag(self, tag, attrs, selfclose):
+        tag = tag.lower()
+        if self.skip:
+            if tag in _DROP_CONTENT and not selfclose:
+                self.skip.append(tag)
+            return
+        if not re.fullmatch(r"[a-z][a-z0-9:-]*", tag):
+            return
+        if tag in _DROP_TAGS:
+            if tag in _DROP_CONTENT and not selfclose and tag not in _VOID:
+                self.skip.append(tag)
+            return
+        parts = []
+        for k, v in attrs:
+            k = (k or "").lower()
+            if not re.fullmatch(r"[a-z_:][a-z0-9_:.-]*", k) or k.startswith("on") or k == "srcdoc":
+                continue
+            if v is None:
+                parts.append(k)
+                continue
+            if k in _URL_ATTRS:
+                v = safe_attr_url(k, v)
+            parts.append('%s="%s"' % (k, htmlmod.escape(v, quote=True)))
+        self.out.append("<%s%s%s>" % (tag, "".join(" " + x for x in parts), "/" if selfclose else ""))
+
+    def handle_starttag(self, tag, attrs):
+        self._tag(tag, attrs, False)
+
+    def handle_startendtag(self, tag, attrs):
+        self._tag(tag, attrs, True)
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if self.skip:
+            if tag == self.skip[-1]:
+                self.skip.pop()
+            return
+        if tag in _DROP_TAGS or not re.fullmatch(r"[a-z][a-z0-9:-]*", tag):
+            return
+        self.out.append("</%s>" % tag)
+
+    def handle_data(self, data):
+        if not self.skip:
+            self.out.append(htmlmod.escape(data, quote=False))
+    # коментари, <!doctype>, <?pi?> не влизат
 
 
-def _clean_tag(m):
-    """Сглобява тага наново атрибут по атрибут: без on*= и srcdoc, адресите минават през _safe_attr."""
-    tag = m.group(0)
-    nm = re.match(r"<([a-zA-Z][a-zA-Z0-9:-]*)", tag)
-    if nm.group(1).lower() in _DROP_TAGS:
-        return ""
-    rest = tag[nm.end():].rstrip(">").rstrip()
-    # "/>" е самозатварящ се таг само след интервал или кавичка; в href=http://x.com/ наклонената е част от адреса
-    closing = "/" if rest.endswith("/") and (len(rest) == 1 or rest[-2] in " \t\n\"'") else ""
-    if closing:
-        rest = rest[:-1]
-    out = []
-    for am in _ATTR.finditer(rest):
-        key = am.group(1).lower()
-        if key.startswith("on") or key == "srcdoc":
-            continue
-        if am.group(2) is None:
-            out.append(am.group(1))
-            continue
-        piece = "%s=%s" % (am.group(1), am.group(2))
-        if key in _URL_ATTRS:
-            piece = re.sub(r"^([^=]+)=(.*)$", _safe_attr, piece, flags=re.S)
-        out.append(piece)
-    return "<%s%s%s>" % (nm.group(1), "".join(" " + x for x in out), closing)
+def sanitize_fragment(body):
+    p = _Sanitizer()
+    p.feed(body)
+    p.close()
+    return "".join(p.out)
 
 
 def inline_body(name):
-    """Връща тялото на малък файл без скриптове, стилове, вградени рамки, без първия <h1>, без on*= и опасни адреси."""
+    """Връща тялото на малък файл без първия <h1>, сглобено наново от безопасни тагове и атрибути."""
     text = read_file(name)
     m = re.search(r"<body>(.*?)</body>", text, re.S)
     body = m.group(1) if m else text
     body = re.sub(r"<h1[^>]*>.*?</h1>", "", body, count=1, flags=re.S)
-    # повтаря до неподвижна точка, за да не се сглоби нов таг от остатъци (<scr<meta>ipt>)
-    for _ in range(10):
-        before = body
-        body = re.sub(r"<(script|style|iframe|object|embed|template|noscript)\b.*?</\1\s*>", "", body, flags=re.S | re.I)
-        body = _TAG.sub(_clean_tag, body)
-        if body == before:
-            break
-    else:
-        return ""
-    return body.strip()
+    return sanitize_fragment(body).strip()
 
 
 def is_inlineable(name):

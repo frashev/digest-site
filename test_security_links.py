@@ -100,6 +100,13 @@ class TestInlineBody(unittest.TestCase):
             '<ifr<base>ame src="javascript:alert(1)"></ifr<base>ame>',
             '<sty<link>le>x</sty<link>le>',
             '<img src=x onerror=alert(1) a=b">',
+            '<img src=x onerror=alert(1) x=<>',
+            '<img src=x onerror=alert(1) a=b<c>',
+            '<iframe src=x <b>>',
+            '<img src=x title="a>b" onerror=alert(1) x=y\'>',
+            "<img src=x t='a>b' onerror=alert(1) x=y\">",
+            '<!--><img src=x onerror=alert(1)>-->',
+            '<math><mtext><table><mglyph><style><img src=x onerror=alert(1)>',
             '<svg><animate attributeName=href values=javascript:alert(1)></animate><set attributeName=href to=javascript:x /></svg>',
         ]
         bad_tags = {"script", "style", "iframe", "object", "embed", "base", "meta", "link", "animate", "set"}
@@ -123,7 +130,7 @@ class TestInlineBody(unittest.TestCase):
 
     def test_unquoted_url_and_self_closing(self):
         out = self._inline('<a href=http://x.com/>x</a><svg><path d="M0 0"/></svg>')
-        self.assertIn("href=http://x.com/>", out)
+        self.assertIn('href="http://x.com/">', out)
         self.assertIn('<path d="M0 0"/>', out)
 
     def test_keeps_normal_links(self):

@@ -96,8 +96,13 @@ class TestInlineBody(unittest.TestCase):
             '<style>body{background:url(javascript:x)}</style>',
             '<base href="https://evil.example/"><meta http-equiv="refresh" content="0;url=x">',
             '<img src="data:image/svg+xml,<svg onload=alert(1)>">',
+            '<scr<meta>ipt>alert(1)</scr<meta>ipt>',
+            '<ifr<base>ame src="javascript:alert(1)"></ifr<base>ame>',
+            '<sty<link>le>x</sty<link>le>',
+            '<img src=x onerror=alert(1) a=b">',
+            '<svg><animate attributeName=href values=javascript:alert(1)></animate><set attributeName=href to=javascript:x /></svg>',
         ]
-        bad_tags = {"script", "style", "iframe", "object", "embed", "base", "meta", "link"}
+        bad_tags = {"script", "style", "iframe", "object", "embed", "base", "meta", "link", "animate", "set"}
         for p in payloads:
             out = self._inline(p)
             got = parse(out)
@@ -115,6 +120,11 @@ class TestInlineBody(unittest.TestCase):
         self.assertIn('href="mailto:a@b.c"', out)
         self.assertIn('src="data:image/png;base64,iVBORw0KGgo="', out)
         self.assertIn('alt="online now"', out)
+
+    def test_unquoted_url_and_self_closing(self):
+        out = self._inline('<a href=http://x.com/>x</a><svg><path d="M0 0"/></svg>')
+        self.assertIn("href=http://x.com/>", out)
+        self.assertIn('<path d="M0 0"/>', out)
 
     def test_keeps_normal_links(self):
         out = self._inline('<a href="https://example.com">x</a> <a href="novini.html#a">y</a>')

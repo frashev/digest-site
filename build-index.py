@@ -607,7 +607,10 @@ def plain_text(html_text, limit=600):
 
 
 _ATTR_VAL = r"""("[^"]*"|'[^']*'|[^\s>]+)"""
-_TAG = re.compile(r"""<[a-zA-Z][^\s/>]*(?:"[^"]*"|'[^']*'|[^'">])*>""")
+# таг с балансирани кавички; ако кавичка е без двойка, резервният клон хваща до първия ">"
+_TAG = re.compile(r"""<[a-zA-Z][a-zA-Z0-9:-]*(?:"[^"]*"|'[^']*'|[^'"<>])*>|<[a-zA-Z][a-zA-Z0-9:-]*[^<>]*>""")
+_DROP_TAGS = {"script", "style", "iframe", "frame", "frameset", "object", "embed", "applet", "meta", "base",
+              "link", "template", "noscript", "animate", "set", "animatemotion", "animatetransform", "handler"}
 
 
 def _safe_attr(m):
@@ -629,9 +632,14 @@ _URL_ATTRS = ("href", "src", "action", "formaction", "xlink:href")
 def _clean_tag(m):
     """Сглобява тага наново атрибут по атрибут: без on*= и srcdoc, адресите минават през _safe_attr."""
     tag = m.group(0)
-    nm = re.match(r"<([a-zA-Z][^\s/>]*)", tag)
+    nm = re.match(r"<([a-zA-Z][a-zA-Z0-9:-]*)", tag)
+    if nm.group(1).lower() in _DROP_TAGS:
+        return ""
     rest = tag[nm.end():].rstrip(">").rstrip()
-    closing = "/" if rest.endswith("/") else ""
+    # "/>" е самозатварящ се таг само след интервал или кавичка; в href=http://x.com/ наклонената е част от адреса
+    closing = "/" if rest.endswith("/") and (len(rest) == 1 or rest[-2] in " \t\n\"'") else ""
+    if closing:
+        rest = rest[:-1]
     out = []
     for am in _ATTR.finditer(rest):
         key = am.group(1).lower()
@@ -653,9 +661,15 @@ def inline_body(name):
     m = re.search(r"<body>(.*?)</body>", text, re.S)
     body = m.group(1) if m else text
     body = re.sub(r"<h1[^>]*>.*?</h1>", "", body, count=1, flags=re.S)
-    body = re.sub(r"<(script|style|iframe|object|embed|template|noscript)\b.*?</\1\s*>", "", body, flags=re.S | re.I)
-    body = re.sub(r"<(script|style|iframe|object|embed|meta|base|link)\b[^>]*>", "", body, flags=re.I)
-    body = _TAG.sub(_clean_tag, body)
+    # повтаря до неподвижна точка, за да не се сглоби нов таг от остатъци (<scr<meta>ipt>)
+    for _ in range(10):
+        before = body
+        body = re.sub(r"<(script|style|iframe|object|embed|template|noscript)\b.*?</\1\s*>", "", body, flags=re.S | re.I)
+        body = _TAG.sub(_clean_tag, body)
+        if body == before:
+            break
+    else:
+        return ""
     return body.strip()
 
 
